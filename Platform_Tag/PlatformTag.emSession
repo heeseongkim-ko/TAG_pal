@@ -1,0 +1,100 @@
+<!DOCTYPE CrossStudio_Session_File>
+<session>
+ <Bookmarks/>
+ <Breakpoints groups="Breakpoints" active_group="Breakpoints">
+  <Exceptions set="MemManage;UsageFault_Coprocessor;UsageFault_CheckingError;UsageFault_StateError;BusFault;ExceptionEntryReturnFault;HardFault"/>
+ </Breakpoints>
+ <ExecutionProfileWindow/>
+ <FrameBufferWindow>
+  <FrameBufferWindow bufferHeight="-1" addressSpace="" addressText="" bufferWidth="-1"/>
+ </FrameBufferWindow>
+ <Memory1>
+  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="TagPlatform" radix="16" sizeText="" addressText=""/>
+ </Memory1>
+ <Memory2>
+  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="TagPlatform" radix="16" sizeText="" addressText=""/>
+ </Memory2>
+ <Memory3>
+  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="TagPlatform" radix="16" sizeText="" addressText=""/>
+ </Memory3>
+ <Memory4>
+  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="TagPlatform" radix="16" sizeText="" addressText=""/>
+ </Memory4>
+ <Project>
+  <ProjectSessionItem path="TagPlatform"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform;Api"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform;Api;Driver"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform;Aply"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform;SDK_nfc"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform;SDK_nfc;HAL_NTAG"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform;SDK_nfc;HAL_NTAG;inc"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform;SDK_nRF"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform;SDK_nRF;None"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform;SDK_nRF;nRF_BLE"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform;SDK_nRF;nRF_Libraries"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform;SDK_uwb"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform;SDK_uwb;platform"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform;SDK_uwb;Shared"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform;SDK_uwb;Shared;dw3000"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform;SDK_uwb;Shared;dw3720"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform;Segger Startup Files"/>
+  <ProjectSessionItem path="TagPlatform;TagPlatform;Source"/>
+ </Project>
+ <Register1>
+  <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/MSP;CPU/PSP;CPU/PRIMASK;CPU/BASEPRI;CPU/FAULTMASK;CPU/CONTROL;CPU/internal;SPI0/EVENTS_READY;SPI0/INTENSET;SPI0/INTENCLR;SPI0/ENABLE;SPI0/RXD;SPI0/TXD;SPI0/FREQUENCY;SPI0/CONFIG;SPI0/PSEL.SCK;SPI0/PSEL.MOSI;SPI0/PSEL.MISO;SPI1/EVENTS_READY;SPI1/INTENSET;SPI1/INTENCLR;SPI1/ENABLE;SPI1/RXD;SPI1/TXD;SPI1/FREQUENCY;SPI1/CONFIG;SPI1/PSEL.SCK;SPI1/PSEL.MOSI;SPI1/PSEL.MISO;SPI2/EVENTS_READY;SPI2/INTENSET;SPI2/INTENCLR;SPI2/ENABLE;SPI2/RXD;SPI2/TXD;SPI2/FREQUENCY;SPI2/CONFIG;SPI2/PSEL.SCK;SPI2/PSEL.MOSI;SPI2/PSEL.MISO;SPIM0/TASKS_START;SPIM0/TASKS_STOP;SPIM0/TASKS_SUSPEND;SPIM0/TASKS_RESUME;SPIM0/EVENTS_STOPPED;SPIM0/EVENTS_ENDRX;SPIM0/EVENTS_END;SPIM0/EVENTS_ENDTX;SPIM0/EVENTS_STARTED;SPIM0/SHORTS;SPIM0/INTENSET;SPIM0/INTENCLR;SPIM0/STALLSTAT;SPIM0/ENABLE;SPIM0/FREQUENCY;SPIM0/CONFIG;SPIM0/CSNPOL;SPIM0/PSELDCX;SPIM0/DCXCNT;SPIM0/ORC;SPIM0/PSEL.SCK;SPIM0/PSEL.MOSI;SPIM0/PSEL.MISO;SPIM0/PSEL.CSN;SPIM0/RXD.PTR;SPIM0/RXD.MAXCNT;SPIM0/RXD.AMOUNT;SPIM0/RXD.LIST;SPIM0/TXD.PTR;SPIM0/TXD.MAXCNT;SPIM0/TXD.AMOUNT;SPIM0/TXD.LIST;SPIM0/IFTIMING.RXDELAY;SPIM0/IFTIMING.CSNDUR;SPIM1/TASKS_START;SPIM1/TASKS_STOP;SPIM1/TASKS_SUSPEND;SPIM1/TASKS_RESUME;SPIM1/EVENTS_STOPPED;SPIM1/EVENTS_ENDRX;SPIM1/EVENTS_END;SPIM1/EVENTS_ENDTX;SPIM1/EVENTS_STARTED;SPIM1/SHORTS;SPIM1/INTENSET;SPIM1/INTENCLR;SPIM1/STALLSTAT;SPIM1/ENABLE;SPIM1/FREQUENCY;SPIM1/CONFIG;SPIM1/CSNPOL;SPIM1/PSELDCX;SPIM1/DCXCNT;SPIM1/ORC;SPIM1/PSEL.SCK;SPIM1/PSEL.MOSI;SPIM1/PSEL.MISO;SPIM1/PSEL.CSN;SPIM1/RXD.PTR;SPIM1/RXD.MAXCNT;SPIM1/RXD.AMOUNT;SPIM1/RXD.LIST;SPIM1/TXD.PTR;SPIM1/TXD.MAXCNT;SPIM1/TXD.AMOUNT;SPIM1/TXD.LIST;SPIM1/IFTIMING.RXDELAY;SPIM1/IFTIMING.CSNDUR;SPIM2/TASKS_START;SPIM2/TASKS_STOP;SPIM2/TASKS_SUSPEND;SPIM2/TASKS_RESUME;SPIM2/EVENTS_STOPPED;SPIM2/EVENTS_ENDRX;SPIM2/EVENTS_END;SPIM2/EVENTS_ENDTX;SPIM2/EVENTS_STARTED;SPIM2/SHORTS;SPIM2/INTENSET;SPIM2/INTENCLR;SPIM2/STALLSTAT;SPIM2/ENABLE;SPIM2/FREQUENCY;SPIM2/CONFIG;SPIM2/CSNPOL;SPIM2/PSELDCX;SPIM2/DCXCNT;SPIM2/ORC;SPIM2/PSEL.SCK;SPIM2/PSEL.MOSI;SPIM2/PSEL.MISO;SPIM2/PSEL.CSN;SPIM2/RXD.PTR;SPIM2/RXD.MAXCNT;SPIM2/RXD.AMOUNT;SPIM2/RXD.LIST;SPIM2/TXD.PTR;SPIM2/TXD.MAXCNT;SPIM2/TXD.AMOUNT;SPIM2/TXD.LIST;SPIM2/IFTIMING.RXDELAY;SPIM2/IFTIMING.CSNDUR;SPIM3/TASKS_START;SPIM3/TASKS_STOP;SPIM3/TASKS_SUSPEND;SPIM3/TASKS_RESUME;SPIM3/EVENTS_STOPPED;SPIM3/EVENTS_ENDRX;SPIM3/EVENTS_END;SPIM3/EVENTS_ENDTX;SPIM3/EVENTS_STARTED;SPIM3/SHORTS;SPIM3/INTENSET;SPIM3/INTENCLR;SPIM3/STALLSTAT;SPIM3/ENABLE;SPIM3/FREQUENCY;SPIM3/CONFIG;SPIM3/CSNPOL;SPIM3/PSELDCX;SPIM3/DCXCNT;SPIM3/ORC;SPIM3/PSEL.SCK;SPIM3/PSEL.MOSI;SPIM3/PSEL.MISO;SPIM3/PSEL.CSN;SPIM3/RXD.PTR;SPIM3/RXD.MAXCNT;SPIM3/RXD.AMOUNT;SPIM3/RXD.LIST;SPIM3/TXD.PTR;SPIM3/TXD.MAXCNT;SPIM3/TXD.AMOUNT;SPIM3/TXD.LIST;SPIM3/IFTIMING.RXDELAY;SPIM3/IFTIMING.CSNDUR" binaryNodes="" asciiNodes="" openNodes="SPI0;SPI1;SPI2;SPIM0;SPIM1;SPIM2;SPIM3;SPIM3/TXD.PTR;SPIM3/TXD.MAXCNT;SPIM3/TXD.AMOUNT" name="TagPlatform" decimalNodes="" octalNodes="" unsignedNodes=""/>
+ </Register1>
+ <Register2>
+  <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/MSP;CPU/PSP;CPU/PRIMASK;CPU/BASEPRI;CPU/FAULTMASK;CPU/CONTROL;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="TagPlatform" decimalNodes="" octalNodes="" unsignedNodes=""/>
+ </Register2>
+ <Register3>
+  <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/MSP;CPU/PSP;CPU/PRIMASK;CPU/BASEPRI;CPU/FAULTMASK;CPU/CONTROL;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="TagPlatform" decimalNodes="" octalNodes="" unsignedNodes=""/>
+ </Register3>
+ <Register4>
+  <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/MSP;CPU/PSP;CPU/PRIMASK;CPU/BASEPRI;CPU/FAULTMASK;CPU/CONTROL;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="TagPlatform" decimalNodes="" octalNodes="" unsignedNodes=""/>
+ </Register4>
+ <Threads>
+  <ThreadsWindow showLists=""/>
+ </Threads>
+ <TraceWindow>
+  <Trace enabled="Yes"/>
+ </TraceWindow>
+ <Watch1>
+  <Watches active="1" update="Never">
+   <Watchpoint expression="l_config" name="l_config" radix="-1" linenumber="0" filename="../Platform_Tag"/>
+   <Watchpoint expression="l_txconfig" name="l_txconfig" radix="-1" linenumber="0" filename="../Platform_Tag"/>
+   <Watchpoint expression="failsafe_results_ui8" name="failsafe_results_ui8" radix="-1" linenumber="0" filename=""/>
+   <Watchpoint expression="l_wakeup_reason" name="l_wakeup_reason" radix="-1" linenumber="0" filename=""/>
+   <Watchpoint expression="s_motion_sleep_counter" name="s_motion_sleep_counter" radix="-1" linenumber="0" filename=""/>
+   <Watchpoint expression="Api_failsafe_get_activated()" name="Api_failsafe_get_activated()" radix="-1" linenumber="0" filename=""/>
+   <Watchpoint expression="ret" name="ret" radix="-1" linenumber="0" filename=""/>
+  </Watches>
+ </Watch1>
+ <Watch2>
+  <Watches active="0" update="Never"/>
+ </Watch2>
+ <Watch3>
+  <Watches active="0" update="Never"/>
+ </Watch3>
+ <Watch4>
+  <Watches active="0" update="Never"/>
+ </Watch4>
+ <Files>
+  <SessionOpenFile windowGroup="DockEditLeft" x="2" y="416" useTextEdit="1" openedFrom="D:/dwm_teia/test_zone/20250820_khs/Platform_Tag/Source/main.c" useBinaryEdit="0" left="0" path="Api/Api_failsafe.c" selected="0" top="389" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="1" y="384" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="Source/main.c" selected="1" top="476" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="62" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="Api/Api_nfc.c" selected="0" top="48" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="30" y="350" useTextEdit="1" openedFrom="D:/dwm_teia/test_zone/20250820_khs/Platform_Tag/Source/main.c" useBinaryEdit="0" left="0" path="Api/Api_sleep.c" selected="0" top="315" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="21" y="366" useTextEdit="1" openedFrom="D:/dwm_teia/test_zone/20250820_khs/Platform_Tag/Source/main.c" useBinaryEdit="0" left="0" path="Aply/Aply_tag_manager.c" selected="0" top="341" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="770" useTextEdit="1" openedFrom="D:/dwm_teia/test_zone/20250820_khs/Platform_Tag/Source/main.c" useBinaryEdit="0" left="0" path="Api/Api_uwb.c" selected="0" top="752" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="691" useTextEdit="1" openedFrom="D:/dwm_teia/test_zone/20250820_khs/Platform_Tag/Api/Api_uwb.c" useBinaryEdit="0" left="0" path="Api/Driver/Drv_uwb_power.c" selected="0" top="662" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="76" useTextEdit="1" openedFrom="D:/dwm_teia/test_zone/20250820_khs/Platform_Tag/Aply/Aply_tag_manager.c" useBinaryEdit="0" left="0" path="Aply/Aply_tag_scheduler.c" selected="0" top="149" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="1050" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="Api/Api_ble.c" selected="0" top="1036" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="21" y="572" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="SDK_nfc/NTAG_I2C_API/HAL_NTAG/ntag_driver.c" selected="0" top="559" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="90" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="Aply/Func_UART_LOG.h" selected="0" top="66" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="Aply/def_config.h" selected="0" top="51" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="406" useTextEdit="1" openedFrom="D:/dwm_teia/test_zone/20250820_khs/Platform_Tag/Source/main.c" useBinaryEdit="0" left="0" path="Aply/Aply_nfc.c" selected="0" top="394" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="37" useTextEdit="1" openedFrom="D:/dwm_teia/test_zone/20250820_khs/Platform_Tag/Aply/Aply_nfc.c" useBinaryEdit="0" left="0" path="Aply/Aply_tag_configuration.c" selected="0" top="20" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="122" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="Aply/Aply_uwb_tx.c" selected="0" top="91" codecName="Default"/>
+ </Files>
+ <ARMCrossStudioWindow activeProject="TagPlatform" fileDialogDefaultFilter="*" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="D:/Software_Workspace/Tag_Flatform/Api" debugSearchPath="" autoConnectCapabilities="3711"/>
+</session>

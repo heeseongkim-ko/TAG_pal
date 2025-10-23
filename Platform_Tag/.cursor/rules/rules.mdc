@@ -1,0 +1,69 @@
+---
+description: C coding standards and naming conventions for TEIA platform
+globs: ["*.c", "*.h"]
+alwaysApply: true
+---
+
+# Variables are named as follows:
+
+- g_: True global variable
+- s_: Static variable (file scope)
+- l_: Local variable (inside a function)
+
+# MCP Installation
+
+If my request requires MCP installation, please describe the required MCP.
+
+# Interrupt Handlers
+
+Do not add comments to interrupt handler functions and functions called from interrupt handlers.
+
+# Language & Comments
+
+- Code comments must be written in English.
+- Function comments must use Doxygen style.
+- Do not add comments to interrupt handler functions or functions called from interrupt handlers.
+
+# Naming
+
+- Variables should follow these prefixes:
+  - g_: True global variable
+  - s_: Static variable (file scope)
+  - l_: Local variable (function scope)
+
+# Safety & Style
+
+- Prefer safe, readable C (MISRA-friendly). Keep functions small, use early returns, and handle error paths first.
+- No dynamic allocation unless asked. Avoid malloc/calloc/realloc/free, new/delete, pvPortMalloc/vPortFree. Prefer static/stack buffers or fixed-size pools (e.g., nrf_balloc).
+- Use printf_uart for logging output. Preserve existing error handling patterns (e.g., APP_ERROR_CHECK).
+- Match existing formatting and respect project style files (e.g., .clang-format, .editorconfig).
+
+# Editing Rules
+
+- Modify only the requested files/regions; avoid broad refactors without explicit approval.
+- If build/flash scripts exist (e.g., build.ps1, flash.ps1), treat them as the canonical flow.
+- Use consistent indentation with tabs
+- Each nested block level should increase indentation by one tab
+- Maintain proper indentation hierarchy for nested structures
+- Align code blocks consistently within the same scope level
+- File-to-file variable access must be done through functions, not direct extern declarations
+
+# Example
+
+```c
+if (condition1) {
+	// First level - 1 tab
+	if (condition2) {
+		// Second level - 2 tabs
+		function_call();
+	}
+}
+```
+
+# Context Usage
+
+- When uncertain about board/SDK/SoftDevice/settings, ask using a short checklist.
+
+# Tooling & MCP
+
+- If a request requires MCP installation, describe the required MCP(s), their purpose, and installation steps before proceeding.
