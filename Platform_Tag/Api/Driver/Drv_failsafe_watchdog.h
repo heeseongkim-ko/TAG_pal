@@ -10,7 +10,7 @@
 
 void failsafe_watchdog_init(void);
 
-bool failsafe_watchdog_check_reset(failsafe_record_t *rec);
+bool failsafe_watchdog_check_reset(failsafe_information_t *rec);
 
 void failsafe_watchdog_channel_feed(void);
 

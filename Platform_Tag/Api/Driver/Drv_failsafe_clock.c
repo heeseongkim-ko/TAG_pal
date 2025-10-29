@@ -6,11 +6,6 @@
 
 #define CLOCK_START_TIMEOUT_MS	10	// Clock start timeout
 
-void Drv_failsafe_clock_init(void)
-{
-	//LOG_DRV_FAIL("[FAIL_CLK] Clock failsafe driver initialized\r\n");
-}
-
 /**
  * @brief Check HFCLK startup with timeout
  * 

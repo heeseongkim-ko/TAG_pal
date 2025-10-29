@@ -8,7 +8,7 @@
 
 void Drv_failsafe_battery_init(void);
 
-bool Drv_failsafe_battery_update_level(uint16_t level, failsafe_record_t *rec);
+bool Drv_failsafe_battery_update_level(uint16_t level, failsafe_information_t *rec);
 
 void Drv_failsafe_battery_time_update(uint32_t time);
 

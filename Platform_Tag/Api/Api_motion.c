@@ -156,8 +156,6 @@ motion_error_t Api_motion_twi_unInit(void)
 	nrf_drv_twi_disable(&motion_twi_instance_p);
 	nrf_drv_twi_uninit(&motion_twi_instance_p);
 	
-	LOG_API_IMU("TWI uninitialized for sleep mode\r\n");
-	
 	return MOTION_SUCCESS;
 }
 
@@ -269,6 +267,11 @@ motion_error_t Api_motion_init_with_config(const motion_config_t *p_config)
 	}
 
 	motion_result_ui32 = motion_write_register(LIS2DH12_CTRL_REG1, motion_reg_value_ui8);
+	if (motion_result_ui32 != MOTION_SUCCESS) {
+		return motion_result_ui32;
+	}
+
+	motion_result_ui32 = motion_write_register(LIS2DH12_INT1_THS, motion_config_g.motion_threshold);	
 	if (motion_result_ui32 != MOTION_SUCCESS) {
 		return motion_result_ui32;
 	}
@@ -513,6 +516,7 @@ motion_error_t Api_motion_set_full_scale(uint8_t full_scale)
 
 	return motion_result_ui32;
 }
+
 motion_error_t Api_motion_get_threshold(uint8_t *p_threshold)
 {
 	motion_error_t motion_result_ui32;

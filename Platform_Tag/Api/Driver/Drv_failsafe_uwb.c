@@ -35,7 +35,7 @@ static const char* get_fail_name(FAILSAFE_CODE code)
  */
 static void recovery_start_init(void)
 {
-	LOG_API_FAIL("[FAIL_DRV] Starting UWB init...\r\n");
+	LOG_API_FAIL("%s\r\n", __func__);
 	
 	Api_uwb_reset_init();
 	Api_uwb_start_init();
@@ -46,7 +46,7 @@ static void recovery_start_init(void)
  */
 static void recovery_start_tx(void)
 {
-	LOG_API_FAIL("[FAIL_DRV] Starting TX...\r\n");
+	LOG_API_FAIL("%s\r\n", __func__);
 	Api_uwb_start_tx(false, false);
 }
 
@@ -55,7 +55,7 @@ static void recovery_start_tx(void)
  */
 static void recovery_start_wakeup(void)
 {
-	LOG_API_FAIL("[FAIL_DRV] Starting wakeup...\r\n");
+	LOG_API_FAIL("%s\r\n", __func__);
 	Api_uwb_start_wakeup(false);
 }
 
@@ -63,26 +63,8 @@ static void recovery_start_wakeup(void)
 // Public Functions
 // ========================================================================================
 
-void Drv_failsafe_uwb_init(void)
-{
-	LOG_API_FAIL("[FAIL_DRV] UWB FailSafe driver ready\r\n");
-}
-
-void Drv_failsafe_uwb_timer_tick(void)
-{
-	// No timer needed
-}
-
-void Drv_failsafe_uwb_main(void)
-{
-	// No processing needed
-}
-
-bool Drv_failsafe_uwb_recover(FAILSAFE_CODE code, uint8_t retry_count)
-{
-	LOG_API_FAIL("[FAIL_DRV] %s: Recovery attempt %d/%d\r\n", 
-				get_fail_name(code), retry_count, FAILSAFE_MAX_RETRY_COUNT);
-	
+bool Drv_failsafe_uwb_recover(FAILSAFE_CODE code, failsafe_information_t *info)
+{	
 	switch (code)
 	{
 		case FAILSAFE_CODE_02:
@@ -95,7 +77,6 @@ bool Drv_failsafe_uwb_recover(FAILSAFE_CODE code, uint8_t retry_count)
 			recovery_start_wakeup();
 			break;
 		default:
-			LOG_API_FAIL("[FAIL_DRV] Unknown tag %d\r\n", code);
 			return false;
 	}
 	

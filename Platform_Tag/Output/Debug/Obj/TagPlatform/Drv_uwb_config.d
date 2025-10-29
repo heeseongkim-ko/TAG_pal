@@ -73,4 +73,6 @@ Output/Debug/Obj/TagPlatform/Drv_uwb_config.o: \
  SDK_nRF/modules/nrfx/hal/nrf_gpiote.h \
  SDK_nRF/modules/nrfx/hal/nrf_gpio.h \
  D\:\dwm_teia\test_zone\20250820_khs\Platform_Tag\Api\Driver\Drv_uwb.h \
- Api/Api_uwb.h Aply/Func_UART_LOG.h Aply/def_config.h Aply/def_packet.h
+ Api/Api_uwb.h Aply/Func_UART_LOG.h Aply/def_config.h Aply/def_packet.h \
+ SDK_uwb/Drivers/API/Shared/dwt_uwb_driver/dw3000/Dw3000_deca_regs.h \
+ SDK_uwb/Drivers/API/Shared/dwt_uwb_driver/dw3000/dw3000_deca_vals.h

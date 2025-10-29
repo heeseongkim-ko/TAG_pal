@@ -62,6 +62,7 @@ static uint32_t s_battery_check_state = BATTERY_STATE_IDLE;       // Battery che
 static uint8_t back_channel_led_state = 0;
 // Static variables for NFC processing
 static bool s_nfc_field_detected = false;  // NFC field detection flag
+static bool s_nfc_get_read_b = false;  // NFC field detection flag
 static bool s_first_init_flag = true;
 // Process completion flags
 static bool s_led_complete_flag = true;                            // LED process completion flag (default ready)
@@ -181,6 +182,14 @@ static void management_nfc_process(void)
 	
 	if (nfc_state == NFC_READER_PRESENT) {
 		s_nfc_field_detected = true;
+		s_nfc_get_read_b = false;
+	}
+	else
+	{
+		if  (s_nfc_field_detected)
+		{
+			s_nfc_get_read_b = true;
+		}
 	}
 }
 
@@ -196,6 +205,7 @@ static void management_nfc_process(void)
 static void management_check_motion_wakeup(void)
 {
 	uint8_t l_wakeup_reason = Api_sleep_getWakeupReason();
+        
 	if (l_wakeup_reason & API_SLEEP_WAKEUP_REASON_MASK_MOTION) {
 		// Motion detected wakeup - clear motion sleep flag
 		Aply_tag_scheduler_clear_motion_sleep_flag();
@@ -221,6 +231,7 @@ static bool management_is_ready_for_sleep_state_based(void)
 	bool uwb_ready = (s_uwb_state == UWB_STATE_IDLE);
 	
 	return (led_ready && battery_ready && uwb_ready);
+	//return (battery_ready && uwb_ready);
 }
 
 static void management_uwb_transmission_process(void)
@@ -243,10 +254,10 @@ static void management_uwb_transmission_process(void)
 				}
 				else
 				{
-                	Aply_tag_scheduler_normal_process_cycle_complete();
-                                        
-					Aply_uwb_tx_prepare_packet(); // Use Aply instead of Func_TEIA_Prepare_Packet
+					Aply_tag_scheduler_normal_process_cycle_complete();
 
+					Aply_uwb_tx_prepare_packet(); // Use Aply instead of Func_TEIA_Prepare_Packet
+					
 					if (Aply_nfc_get_uwb_settings_changed() || Aply_backchannel_get_uwb_settings_changed()) {					
 						Aply_nfc_check_and_apply_uwb_settings();
 						Aply_backchannel_clear_uwb_settings_changed();
@@ -461,8 +472,8 @@ void Aply_tag_manager_init(void)
 }
 
 void Aply_tag_manager_process(void)
-{
-	if  ((Api_failsafe_isRecovery()) || (Api_failsafe_isMajor()))
+{	
+	if  (Api_failsafe_blocking_system())
 	{
 		return;
 	}
@@ -475,7 +486,7 @@ void Aply_tag_manager_process(void)
 				Aply_get_uwb_mac_address();
 				Aply_nfc_check_and_init_tag_configuration();
 				Aply_tag_scheduler_init();
-				Aply_tag_configuration_init_motion_detection();
+				Aply_tag_configuration_set_motion_config();
 				/* Initialize UWB TX packets */
 				Aply_uwb_tx_update_packets();
 				s_tag_manager_state = TAG_MANAGER_STATE_NORMAL;
@@ -502,7 +513,7 @@ void Aply_tag_manager_process(void)
 				management_check_motion_wakeup();
 				
 				// Check NFC field detection before entering sleep
-				if (s_nfc_field_detected || s_first_init_flag) {
+				if (s_nfc_get_read_b || s_first_init_flag) {
 					// NFC field detected - check and apply NFC configuration
 					Aply_nfc_check_and_init_tag_configuration();
 					
@@ -513,7 +524,7 @@ void Aply_tag_manager_process(void)
 					Aply_tag_scheduler_init();
 
 					// Initialize motion detection
-					Aply_tag_configuration_init_motion_detection();
+					Aply_tag_configuration_set_motion_config();
 
 					// Update TX packets with new configuration
 					Aply_uwb_tx_update_packets();
@@ -521,7 +532,7 @@ void Aply_tag_manager_process(void)
 					// Set info packet flag to send updated configuration
 					Aply_uwb_tx_set_packet_flags(true, false, false); // info=true, battery=false, bc=false
 					
-					s_nfc_field_detected = false; // Reset flag after processing
+					s_nfc_get_read_b = false; // Reset flag after processing
 					s_first_init_flag = false;
 				}
 				
@@ -594,3 +605,4 @@ static void management_enter_sleep_mode(void)
 		Api_sleep_start_sleep();
 	}
 }
+

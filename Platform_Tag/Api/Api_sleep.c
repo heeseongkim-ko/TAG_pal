@@ -331,13 +331,7 @@ void check_clock_status(void)
     else
     {
         LOG_API_SLEEP("HFCLK: OFF\r\n");
-    }
-    
-    LOG_API_SLEEP("LFCLKSTAT: 0x%08X\r\n", NRF_CLOCK->LFCLKSTAT);
-    
-    LOG_API_SLEEP("HFCLKRUN: %u\r\n", NRF_CLOCK->HFCLKRUN);
-    
-    LOG_API_SLEEP("===================\r\n\r\n");
+    }    
 }
 
 //nrf_gpio_cfg_output(DW3000_RESET_Pin);
@@ -345,7 +339,7 @@ void check_clock_status(void)
 
 bool sleep_is_used_pin(uint32_t pin)
 {
-	if  (pin == DW3000_RESET_Pin)
+	if  ((pin == DW3000_RESET_Pin) || (pin == P_MOTION_INT) || (pin == P_NFC_FD))
 	{
 		return true;
 	}
@@ -380,8 +374,8 @@ void Api_sleep_configure_unused_pins(void)
  * @note This function returns immediately if no sleep request is pending
  */
 void Api_sleep_main(void)
-{	
-	if  ((Api_failsafe_isRecovery()) || (Api_failsafe_isMajor()))
+{		
+	if  (Api_failsafe_blocking_system())
 	{
 		return;
 	}

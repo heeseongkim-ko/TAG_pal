@@ -6,11 +6,6 @@
 #include "Api_failsafe.h"
 
 /**
- * @brief Initialize clock failsafe driver
- */
-void Drv_failsafe_clock_init(void);
-
-/**
  * @brief Check HFCLK startup with timeout
  * @return true if HFCLK started successfully, false if timeout
  */

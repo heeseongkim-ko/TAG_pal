@@ -222,6 +222,13 @@ void Aply_get_uwb_mac_address(void);
  */
 bool Aply_tag_configuration_init_motion_detection(void);
 
+/**
+ * @brief Apply motion sensor configuration from tag configuration
+ * @details Reads full scale and motion threshold from tag configuration,
+ *          calculates threshold value, and applies to motion sensor hardware
+ * @return None
+ */
+void Aply_tag_configuration_set_motion_config(void);
 
 #ifdef __cplusplus
 }

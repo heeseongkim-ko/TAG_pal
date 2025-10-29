@@ -14,7 +14,7 @@ void Drv_failsafe_battery_init(void)
 	failsafe_battery_init_b = false;
 }
 
-bool Drv_failsafe_battery_update_level(uint16_t level, failsafe_record_t *rec)
+bool Drv_failsafe_battery_update_level(uint16_t level, failsafe_information_t *rec)
 {
 	int16_t voltage_diff_i16;
 	uint16_t abs_voltage_diff_ui16;
@@ -71,9 +71,8 @@ bool Drv_failsafe_battery_update_level(uint16_t level, failsafe_record_t *rec)
 				Api_failsafe_set_fail(FAILSAFE_CODE_08);
 
 				rec->fail_flag = true;
-				rec->parent_code = FAILSAFE_CODE_08;
-				rec->result = FAIL_RESULT_FAIL;
-				rec->status = FAIL_STATUS_TERMINATED;
+				rec->result = FAILSAFE_RESULT_FAIL;
+				rec->status = FAILSAFE_STATUS_TERMINATED;
 				rec->retry_count = 0;
 
 				ret = true;

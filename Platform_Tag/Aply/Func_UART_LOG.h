@@ -83,7 +83,7 @@ void uart_send_string(const char* str);
 #define LOG_API_BLE	// printf_uart2
 #define LOG_API_NFC	// printf_uart2
 #define LOG_API_UWB	// printf_uart2
-#define	LOG_API_IMU	// printf_uart2
+#define	LOG_API_IMU	 printf_uart2
 #define	LOG_API_LED	// printf_uart2
 #define LOG_API_BAT     //printf_uart2
 #define LOG_API_SLEEP  //printf_uart2

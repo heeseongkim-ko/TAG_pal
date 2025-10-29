@@ -95,4 +95,6 @@ Output/Debug/Obj/TagPlatform/Api_sleep.o: \
  SDK_nRF/components/softdevice/s140/headers/ble_l2cap.h \
  SDK_nRF/components/softdevice/s140/headers/ble_gatt.h \
  SDK_nRF/components/softdevice/s140/headers/ble_gattc.h \
- SDK_nRF/components/softdevice/s140/headers/ble_gatts.h
+ SDK_nRF/components/softdevice/s140/headers/ble_gatts.h \
+ D\:\dwm_teia\test_zone\20250820_khs\Platform_Tag\Api\Api_Led.h \
+ D\:\dwm_teia\test_zone\20250820_khs\Platform_Tag\Api\Api_battery.h

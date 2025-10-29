@@ -28,13 +28,14 @@ typedef enum
 	FAILSAFE_CODE_MAX
 } FAILSAFE_CODE;
 
-#define FAIL_RESULT_NONE     0x00  ///< No failure detected
-#define FAIL_RESULT_SUCCESS  0x01  ///< Operating normally
-#define FAIL_RESULT_FAIL     0x02  ///< Final fail (5+ retries)
+#define FAILSAFE_RESULT_NONE     0x00  ///< No failure detected
+#define FAILSAFE_RESULT_SUCCESS  0x01  ///< Operating normally
+#define FAILSAFE_RESULT_FAIL     0x02  ///< Final fail (5+ retries)
 
-#define FAIL_STATUS_NORMAL      0x00  ///< Normal operation
-#define FAIL_STATUS_RECOVERING  0x01  ///< Recovery in progress
-#define FAIL_STATUS_TERMINATED  0x02  ///< Recovery terminated (final fail)
+#define	FAILSAFE_STATUS_TRIGGER 		0x00
+#define	FAILSAFE_STATUS_RECOVERING 		0x01
+#define FAILSAFE_STATUS_CHECK_RECOVER 	0x02
+#define	FAILSAFE_STATUS_TERMINATED 		0x03
 
 #define FAILSAFE_NFC_ADDRESS  0xE0
 
@@ -47,11 +48,11 @@ typedef struct
 	uint8_t result;       ///< Fail result (NFC storage): SUCCESS/FAIL
 	uint8_t status;       ///< Fail status (RAM only): NORMAL/RECOVERING/TERMINATED
 	uint8_t retry_count;  ///< Current retry count (0~5)
+	uint16_t timer;
 	bool fail_flag;       ///< Fail detection flag
 	bool success_flag;    ///< Success detection flag
-	FAILSAFE_CODE parent_code;  ///< Parent code (for INIT recovery from TX/Wakeup)
-} failsafe_record_t;
-
+	bool recovery_result;
+} failsafe_information_t;
 
 bool Api_failsafe_clock_check_hfclk_start(void);
 
@@ -67,27 +68,14 @@ void Api_failsafe_set_fail(FAILSAFE_CODE code);
 
 void Api_failsafe_set_success(FAILSAFE_CODE code);
 
-bool Api_failsafe_isRecovery(void);
-
 bool Api_failsafe_isMajor(void);
 
-uint8_t Api_failsafe_getResult(FAILSAFE_CODE code);
-
-uint8_t Api_failsafe_getStatus(FAILSAFE_CODE code);
-
-uint8_t Api_failsafe_getRetryCount(FAILSAFE_CODE code);
-
-bool Api_failsafe_main(void);
+void Api_failsafe_main(void);
 
 void Api_failsafe_battery_update_level(uint16_t level);
 
 void Api_failsafe_battery_time_update(uint32_t time);
 
-/**
- * @brief Check internal memory (Flash/RAM) integrity at boot
- * @return true if memory is healthy, false otherwise
- */
-bool Api_failsafe_check_memory(void);
-
+bool Api_failsafe_blocking_system(void);
 
 #endif // API_FAILSAFE_H

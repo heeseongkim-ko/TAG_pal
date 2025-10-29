@@ -103,5 +103,5 @@ Output/Debug/Obj/TagPlatform/main.o: \
  Aply/Aply_tag_configuration.h Aply/def_config.h Aply/def_packet.h \
  Aply/Aply_nfc.h Aply/Aply_tag_scheduler.h Aply/Aply_uwb_tx.h \
  Aply/Aply_uwb_rx.h Aply/Aply_nfc.h Aply/Func_UART_LOG.h \
- Aply/Func_TEIA_ROUTINES.h SDK_nRF/components/libraries/timer/drv_rtc.h \
+ SDK_nRF/components/libraries/timer/drv_rtc.h \
  SDK_nRF/modules/nrfx/hal/nrf_rtc.h Aply/def_config.h Aply/def_packet.h

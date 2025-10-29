@@ -38,6 +38,10 @@ mac_header_bb_t g_mac_header;
 sensor_config_t s_sensor_config;
 
 /**
+ * @brief Forward declaration for calculate_motion_threshold
+ */
+static uint8_t calculate_motion_threshold(uint8_t sensitivity_level, uint8_t full_scale);
+/**
  * @brief Initialize tag configuration with default values or NFC data
  * @details First checks NFC data for valid configuration. If MAC address matches
  *          and status is 0x01 (Default), uses NFC values. Otherwise initializes
@@ -527,6 +531,28 @@ void Aply_get_uwb_mac_address(void)
 	} else {
 		//printf_uart("Failed to generate MAC address\r\n");
 	}
+}
+
+/**
+ * @brief Apply motion sensor configuration from tag configuration
+ * @details Reads full scale and motion threshold from tag configuration,
+ *          calculates threshold value, and applies to motion sensor hardware
+ * @return None
+ */
+void Aply_tag_configuration_set_motion_config(void)
+{
+	uint8_t l_full_scale = Aply_tag_configuration_get_field(CONFIG_FIELD_IMU_FS_RANGE);
+	uint8_t l_motion_threshold;
+	
+	// Calculate motion threshold based on sensitivity level and full scale
+	l_motion_threshold = calculate_motion_threshold(
+		Aply_tag_configuration_get_field(CONFIG_FIELD_MOTION_THRESHOLD),
+		l_full_scale
+	);
+	
+	// Apply full scale and threshold to motion sensor hardware
+	Api_motion_set_full_scale(l_full_scale);
+	Api_motion_set_threshold(l_motion_threshold);
 }
 
 /**

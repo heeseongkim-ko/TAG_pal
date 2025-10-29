@@ -84,9 +84,19 @@ void Aply_tag_scheduler_normal_process_cycle_complete(void)
 		// Normal mode: use normal BC counter
 		if (s_normal_bc_enabled) s_normal_bc_packet_counter--;
 	}
-	s_bat_packet_counter--;
-	s_led_counter--;
-	s_battery_check_counter--;
+
+    if  (s_bat_packet_counter > 0)
+    {
+      s_bat_packet_counter--;
+    }
+    if  (s_led_counter > 0)
+    {
+      s_led_counter--;
+    }
+    if  (s_battery_check_counter > 0)
+    {
+      s_battery_check_counter--;
+    }
 	
 	bool info_flag = false;
 	bool battery_flag = false;
