@@ -76,11 +76,23 @@ void Aply_uwb_tx_set_packet_flags(bool info_flag, bool battery_flag, bool bc_fla
 void Aply_uwb_tx_reset_packet_flags(void);
 
 /**
+ * @brief Clear BC packet flag
+ * @details Resets the BC packet flag to false
+ */
+void Aply_uwb_tx_clear_bc_flag(void);
+
+/**
  * @brief Check if last prepared packet was BC packet
  * @details Returns whether the last packet prepared by Aply_uwb_tx_prepare_packet() was a BC packet.
  * @return true if last packet was BC, false if regular packet
  */
 bool Aply_uwb_tx_was_last_packet_bc(void);
+
+/**
+ * @brief Send ACK packet in response to BD packet
+ * @return true if ACK packet was sent successfully, false otherwise
+ */
+bool Aply_uwb_tx_send_ack_packet(void);
 
 #ifdef __cplusplus
 }

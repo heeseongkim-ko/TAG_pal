@@ -87,7 +87,7 @@ void Func_TEIA_Get_Random_TX_Settings(bool* enable, int32_t* min_offset, int32_t
 
 // LIS2DH12 Motion Detection Settings
 #define MOTION_DETECTION_ODR_25HZ       25      // 25Hz ODR for motion detection
-#define MOTION_DETECTION_THRESHOLD      0x03    // 48mg threshold (0x03)
+#define MOTION_DETECTION_THRESHOLD      0x01    // 48mg threshold (0x01)
 #define MOTION_DETECTION_DURATION       0x01    // 40ms duration (0x01)
 #define MOTION_DETECTION_CTRL_REG1      0x3F    // 25Hz ODR + Low-power + All axes enabled
 

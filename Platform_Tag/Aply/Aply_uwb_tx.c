@@ -7,6 +7,7 @@
  */
 
 #include "Aply_uwb_tx.h"
+#include "Aply_uwb_rx.h"
 #include "Func_UART_LOG.h"
 #include "Aply_tag_configuration.h"
 #include "def_packet.h"
@@ -149,12 +150,6 @@ uint16_t Aply_uwb_tx_prepare_packet(void)
 		
 		// 4. Set UWB transmission buffer
 		Api_uwb_set_tx_message(s_tx_buffer, l_total_length);
-		
-		//printf_uart("[TX : %d] : ", l_total_length);
-		//for (uint16_t i = 0; i < l_total_length; i++) {
-		//	printf_uart("%02X ", s_tx_buffer[i]);
-		//}
-		//printf_uart("\r\n");
 	}
 	
 	return l_total_length;
@@ -217,7 +212,14 @@ static void Aply_uwb_tx_build_tag_info_data(tag_info_msg_t* info_data)
 	info_data->active_sensors = Aply_tag_configuration_get_field(CONFIG_FIELD_ACTIVE_SENSORS);
 	
 	// MCR threshold (2 bytes)
-	info_data->mcr_threshold[0] = Aply_tag_configuration_get_array_field(CONFIG_FIELD_MCR_THRESHOLD, 0);
+	uint8_t l_motion_threshold = Aply_tag_configuration_get_field(CONFIG_FIELD_MOTION_THRESHOLD);
+	if (l_motion_threshold == 4) {
+		// Custom value: no offset
+		info_data->mcr_threshold[0] = Aply_tag_configuration_get_array_field(CONFIG_FIELD_MCR_THRESHOLD, 0);
+	} else {
+		// Normal value: subtract 1
+		info_data->mcr_threshold[0] = Aply_tag_configuration_get_array_field(CONFIG_FIELD_MCR_THRESHOLD, 0) - 1;
+	}
 	info_data->mcr_threshold[1] = Aply_tag_configuration_get_array_field(CONFIG_FIELD_MCR_THRESHOLD, 1);
 	
 	// Sensor ranges and settings
@@ -326,5 +328,44 @@ void Aply_uwb_tx_reset_packet_flags(void)
 bool Aply_uwb_tx_was_last_packet_bc(void)
 {
 	return s_last_packet_was_bc;
+}
+
+/**
+ * @brief Send ACK packet in response to BD packet
+ * @return true if ACK packet was sent successfully, false otherwise
+ */
+bool Aply_uwb_tx_send_ack_packet(void)
+{
+	// Get ACK number from received BD packet
+	uint8_t ack_number[6];
+	if (!Aply_uwb_rx_get_ack_number(ack_number))
+	{
+		return false; // No ACK number available
+	}
+	
+	// Create BA packet: BA + MAC + SEQ + ACK_NUMBER
+	uint8_t ba_packet[14];
+	
+	ba_packet[0] = 0xBA; // BA packet type
+	memcpy(&ba_packet[1], s_mac_header.MAC_addr, 6); // MAC address from existing header
+	ba_packet[7] = s_sequence_number++; // Sequence number
+	memcpy(&ba_packet[8], ack_number, 6); // ACK number from BD packet
+	
+	// Set TX message and prepare for transmission (don't start TX here)
+	Api_uwb_set_tx_message(ba_packet, 14);
+	
+	// Reset BC flag after ACK packet preparation
+	s_last_packet_was_bc = false;
+	
+	return true;
+}
+
+/**
+ * @brief Clear BC packet flag
+ * @details Resets the BC packet flag to false
+ */
+void Aply_uwb_tx_clear_bc_flag(void)
+{
+	s_last_packet_was_bc = false;
 }
 

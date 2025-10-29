@@ -21,6 +21,7 @@
 
 #include "Drv_uwb_internal.h"
 #include "Api_failsafe.h"
+#include "Drv_uwb_spi.h"
 
 device_init_state_e drv_uwb_init_state_g = DEVICE_INIT_STATE_IDLE;
 
@@ -36,9 +37,22 @@ device_init_state_e drv_uwb_init_state_g = DEVICE_INIT_STATE_IDLE;
  */
 static void uwb_init_state_start(void)
 {
+	uint32_t ret;
+	
 	LOG_API_UWB("%s - Starting initialization\r\n", __func__);
+	ret = Drv_uwb_spi_init(false);	
+
+	if  (ret == NRF_SUCCESS)
+	{
+		Api_failsafe_set_success(FAILSAFE_CODE_12);
+	}
+	else
+	{
+		Api_failsafe_set_fail(FAILSAFE_CODE_12);
+	}
+	
 	Drv_uwb_init_set_state(DEVICE_INIT_STATE_RESET_PIN_LOW);
-	Drv_uwb_set_sequence_timer(0);
+	Drv_uwb_set_sequence_timer(1);
 	Drv_uwb_set_device_ready(false);
 	Drv_uwb_set_device_wakeup(false);
 }
@@ -113,8 +127,9 @@ static void uwb_init_state_probe_device(void)
 	if  (ret == DWT_ERROR)
 	{
 		LOG_API_UWB("Device probe failed\r\n");
-		Drv_uwb_init_set_state(DEVICE_INIT_STATE_IDLE);
-		Api_failsafe_set_uwb_fail(UWB_FAIL_INIT_01);
+		Drv_uwb_init_set_state(DEVICE_INIT_STATE_ERROR);
+		
+		Api_failsafe_set_fail(FAILSAFE_CODE_02);
 		return;
 	}
 	
@@ -131,8 +146,8 @@ static void uwb_init_state_read_deviceID(void)
 	if (l_dev_id == 0 || l_dev_id == 0xFFFFFFFF) 
 	{
 		LOG_API_UWB("Device ID failed\r\n");
-		Drv_uwb_init_set_state(DEVICE_INIT_STATE_IDLE);
-		Api_failsafe_set_uwb_fail(UWB_FAIL_INIT_01);
+		Drv_uwb_init_set_state(DEVICE_INIT_STATE_ERROR);
+		Api_failsafe_set_fail(FAILSAFE_CODE_02);
 	} 
 	else 
 	{
@@ -166,8 +181,8 @@ static void uwb_init_state_initialize(void)
 	if (dwt_initialise(DWT_DW_INIT | DWT_READ_OTP_PID | DWT_READ_OTP_LID) == DWT_ERROR) 
 	{
 		LOG_API_UWB("INIT FAILED\r\n");
-		Drv_uwb_init_set_state(DEVICE_INIT_STATE_IDLE);
-		Api_failsafe_set_uwb_fail(UWB_FAIL_INIT_02);
+		Drv_uwb_init_set_state(DEVICE_INIT_STATE_ERROR);
+		Api_failsafe_set_fail(FAILSAFE_CODE_02);
 	} 
 	else 
 	{
@@ -206,8 +221,8 @@ static void uwb_init_state_configure(void)
 	if (dwt_configure(&l_config)) 
 	{
 		LOG_API_UWB("CONFIG FAILED\r\n");
-		Drv_uwb_init_set_state(DEVICE_INIT_STATE_IDLE);		
-		Api_failsafe_set_uwb_fail(UWB_FAIL_INIT_03);
+		Drv_uwb_init_set_state(DEVICE_INIT_STATE_ERROR);
+		Api_failsafe_set_fail(FAILSAFE_CODE_02);
 	} 
 	else 
 	{
@@ -245,10 +260,10 @@ static void uwb_init_state_complete(void)
 	Drv_uwb_set_sequence_timer(0);
 	
 	Drv_uwb_rx_forceStop();
-	
-	Api_failsafe_set_uwb_fail(UWB_FAIL_NONE);
 
 	dwt_writesysstatuslo(DWT_INT_RCINIT_BIT_MASK | DWT_INT_SPIRDY_BIT_MASK);
+
+	Api_failsafe_set_success(FAILSAFE_CODE_02);
 		
 //	dwt_setinterrupt(DWT_INT_SPIRDY_BIT_MASK | DWT_INT_RCINIT_BIT_MASK, 
 //	                 0,  // bitmask (don't care for enable)
@@ -283,7 +298,7 @@ void Drv_uwb_init_process_state_machine(void)
 			break;
 			
 		case DEVICE_INIT_STATE_START:
-			uwb_init_state_start();
+			uwb_init_state_start();			
 			break;
 			
 		case DEVICE_INIT_STATE_RESET_PIN_LOW:
@@ -334,9 +349,10 @@ void Drv_uwb_init_process_state_machine(void)
 			uwb_init_state_complete();
 			break;
 			
-	//	case DEVICE_INIT_STATE_ERROR:
-	//		uwb_init_state_error();
-	//		break;
+		case DEVICE_INIT_STATE_ERROR:
+			// Error state - wait for failsafe recovery
+			Drv_uwb_init_set_state(DEVICE_INIT_STATE_IDLE);
+			break;
 			
 		default:
 			Drv_uwb_init_set_state(DEVICE_INIT_STATE_IDLE);

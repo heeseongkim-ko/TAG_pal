@@ -240,6 +240,8 @@ void Api_nfc_debug_field_detection(void);
 
 void Api_nfc_timer_tick(void);
 
+bool Api_nfc_power_on(void);
+
 
 #ifdef __cplusplus
 }

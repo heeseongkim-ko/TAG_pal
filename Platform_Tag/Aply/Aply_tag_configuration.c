@@ -11,7 +11,9 @@
 #include "Func_UART_LOG.h"
 #include "Api_uwb.h"
 #include "Api_uwb_param.h"
+#include "Api_motion.h"
 #include "def_config.h"
+#include "def_packet.h"
 #include <string.h>
 #include <stdint.h>
 
@@ -24,6 +26,16 @@ static tag_configuration_t s_tag_config;
  * @brief Configuration initialization flag
  */
 static bool s_config_initialized = false;
+
+/**
+ * @brief Global MAC header structure for UWB communication
+ */
+mac_header_bb_t g_mac_header;
+
+/**
+ * @brief Sensor configuration structure
+ */
+sensor_config_t s_sensor_config;
 
 /**
  * @brief Initialize tag configuration with default values or NFC data
@@ -81,6 +93,7 @@ void Aply_tag_configuration_init_default(void)
 	s_tag_config.random_dev = RANDOM_TX_ENABLE_DEFAULT;	// From def_config.h
 	s_tag_config.mcr_threshold[0] = MCR_THRESHOLD_LOW_BYTE_DEFAULT;		// From def_config.h
 	s_tag_config.mcr_threshold[1] = MCR_THRESHOLD_HIGH_BYTE_DEFAULT;	// From def_config.h
+	s_tag_config.motion_threshold = MOTION_DETECTION_THRESHOLD;	// From def_config.h
 	
 	// Sensor configuration (default values)
 	s_tag_config.mounted_sensors = SENSOR_DEFAULT_MOTION_MOUNTED;	// From def_config.h
@@ -189,6 +202,7 @@ uint8_t Aply_tag_configuration_get_field(config_field_e field)
 		case CONFIG_FIELD_BC_VERSION:			return s_tag_config.bc_version;
 		case CONFIG_FIELD_BC_PERIOD_RI:		return s_tag_config.bc_period_ri;
 		case CONFIG_FIELD_BC_PERIOD_RISM:		return s_tag_config.bc_period_rism;
+		case CONFIG_FIELD_MOTION_THRESHOLD:	return s_tag_config.motion_threshold;
 		default:								return 0;
 	}
 }
@@ -241,6 +255,7 @@ bool Aply_tag_configuration_set_field(config_field_e field, uint8_t value)
 		case CONFIG_FIELD_BC_VERSION:			s_tag_config.bc_version = value; break;
 		case CONFIG_FIELD_BC_PERIOD_RI:		s_tag_config.bc_period_ri = value; break;
 		case CONFIG_FIELD_BC_PERIOD_RISM:		s_tag_config.bc_period_rism = value; break;
+		case CONFIG_FIELD_MOTION_THRESHOLD:	s_tag_config.motion_threshold = value; break;
 		default:								return false;
 	}
 	
@@ -456,12 +471,24 @@ void Aply_tag_configuration_load_from_nfc(const nfc_eeprom_tag_config_data_t* nf
 	s_tag_config.motion_sleep_time[2] = nfc_data->sleep_motion_interval[1];
 	s_tag_config.motion_sleep_time[3] = nfc_data->sleep_motion_interval[0]; // LSB
 	s_tag_config.random_dev = nfc_data->sleep_random_dev;
-	s_tag_config.mcr_threshold[0] = nfc_data->sleep_custom_threshold[0];
-	s_tag_config.mcr_threshold[1] = nfc_data->sleep_custom_threshold[1];
+	
+	// Motion threshold from sleep_threshold
+	s_tag_config.motion_threshold = nfc_data->sleep_threshold;
+	
+	// Get threshold from sleep_custom_threshold when sleep_threshold is 4
+	if (nfc_data->sleep_threshold == 4) {
+		s_tag_config.mcr_threshold[0] = nfc_data->sleep_custom_threshold[1];
+		s_tag_config.mcr_threshold[1] = nfc_data->sleep_custom_threshold[0];
+	}
+	// When sleep_threshold < 4, use sleep_threshold - 1
+	else if (nfc_data->sleep_threshold < 4) {
+		s_tag_config.mcr_threshold[0] = nfc_data->sleep_threshold;
+		s_tag_config.mcr_threshold[1] = nfc_data->sleep_custom_threshold[1];
+	}
 	
 	// Sensor configuration (from NFC)
-	s_tag_config.mounted_sensors = SENSOR_DEFAULT_MOTION_MOUNTED;	// Keep default
-	s_tag_config.active_sensors = nfc_data->accelerometer;
+	//s_tag_config.mounted_sensors = SENSOR_DEFAULT_MOTION_MOUNTED;	// Keep default
+	s_tag_config.active_sensors = SENSOR_DEFAULT_MOTION_ACTIVE;		// Keep default
 	s_tag_config.IMU_FS_range = nfc_data->accel_range;
 	s_tag_config.BARO_setting = SENSOR_DEFAULT_BARO_SETTING;		// Keep default
 	s_tag_config.AHRS_representation = SENSOR_DEFAULT_AHRS_REPRESENTATION;	// Keep default
@@ -474,5 +501,141 @@ void Aply_tag_configuration_load_from_nfc(const nfc_eeprom_tag_config_data_t* nf
 	s_config_initialized = true;
 	
 	LOG_API_UWB("Tag Configuration: Loaded from NFC EEPROM data\r\n");
+}
+
+/**
+ * @brief Generate and store UWB MAC address
+ * @details Generates a unique MAC address for UWB communication and stores it
+ *          in the global MAC header structure. Sets default frame code and
+ *          initializes sequence number.
+ * @return None
+ * @note This function must be called after UWB system initialization.
+ *       The generated MAC address is stored in g_mac_header.MAC_addr.
+ */
+void Aply_get_uwb_mac_address(void)
+{
+	if (Api_uwb_compose_MAC_address(g_mac_header.MAC_addr)) {
+		g_mac_header.fcode = UWB_FCODE_BLINK;  // Set default frame code
+		g_mac_header.seqNum = 0;               // Initialize sequence number
+		
+		//printf_uart("MAC address generated and stored: ");
+		//for (int i = 0; i < MAC_ADDR_BYTE_SIZE; i++) {
+		//	printf_uart("%02X", g_mac_header.MAC_addr[i]);
+		//	if (i < MAC_ADDR_BYTE_SIZE - 1) printf_uart(":");
+		//printf_uart("\r\n");
+		//}
+	} else {
+		//printf_uart("Failed to generate MAC address\r\n");
+	}
+}
+
+/**
+ * @brief Calculate motion threshold value based on sensitivity level and full scale range
+ * @param[in] sensitivity_level 0=48mg, 1=256mg, 2=1024mg, 3=custom value
+ * @param[in] full_scale Full scale range (0=2g, 1=4g, 2=8g, 3=16g)
+ * @return Calculated threshold value
+ */
+static uint8_t calculate_motion_threshold(uint8_t sensitivity_level, uint8_t full_scale)
+{
+	uint16_t l_mg_value = 0;
+	uint16_t l_threshold = 0;
+	
+	// Convert sensitivity level to mg value
+	switch (sensitivity_level) {
+		case 1:
+			l_mg_value = 48;   // 48mg
+			break;
+		case 2:
+			l_mg_value = 256;  // 256mg
+			break;
+		case 3:
+			l_mg_value = 1024; // 1024mg
+			break;
+		case 4:
+			// Custom value - use mcr_threshold as uint16_t and convert to mg
+			// Little endian: mcr_threshold[1] is high byte, mcr_threshold[0] is low byte
+			l_mg_value = (s_tag_config.mcr_threshold[1] << 8) | s_tag_config.mcr_threshold[0];
+			break;
+		default:
+			l_mg_value = 48;   // Default: 48mg
+			break;
+	}
+	
+	// Calculate threshold based on full scale range
+	// LIS2DH12: +/-2g (1 LSB = 16mg), +/-4g (1 LSB = 32mg), +/-8g (1 LSB = 64mg), +/-16g (1 LSB = 192mg)
+	switch (full_scale) {
+		case 0: // +/-2g, 1 LSB = 16mg
+			l_threshold = (uint16_t)(l_mg_value / 16);
+			break;
+		case 1: // +/-4g, 1 LSB = 32mg
+			l_threshold = (uint16_t)(l_mg_value / 32);
+			break;
+		case 2: // +/-8g, 1 LSB = 64mg
+			l_threshold = (uint16_t)(l_mg_value / 64);
+			break;
+		case 3: // +/-16g, 1 LSB = 192mg
+			l_threshold = (uint16_t)(l_mg_value / 192);
+			break;
+		default:
+			// Default to +/-2g for invalid full_scale
+			l_threshold = (uint16_t)(l_mg_value / 16);
+			break;
+	}
+	
+	// Ensure threshold is within valid range (1-127)
+	if (l_threshold == 0) {
+		l_threshold = 1;
+	}
+	if (l_threshold > 127) {
+		l_threshold = 127;
+	}
+	
+	return (uint8_t)l_threshold;
+}
+
+/**
+ * @brief Initialize LIS2DH12 for motion detection
+ * @details Configures LIS2DH12 accelerometer for low-power motion detection
+ * @return true if initialization successful, false otherwise
+ */
+bool Aply_tag_configuration_init_motion_detection(void)
+{
+    motion_error_t result;
+    motion_config_t config;
+    
+    // Configure motion sensor settings
+    config.i2c_address = MOTION_DEFAULT_I2C_ADDR;  // Default I2C address
+    config.output_data_rate = MOTION_ODR_25HZ;  // 25Hz ODR
+    config.full_scale = Aply_tag_configuration_get_field(CONFIG_FIELD_IMU_FS_RANGE);   // Get from configuration
+    // Calculate motion threshold based on sensitivity level and full scale
+    config.motion_threshold = calculate_motion_threshold(
+		Aply_tag_configuration_get_field(CONFIG_FIELD_MOTION_THRESHOLD),
+		config.full_scale
+	);
+    config.motion_duration = MOTION_DETECTION_DURATION;    // 40ms duration
+    config.enable_xyz_axes = true;  // Enable X, Y, Z axes
+    
+    // Initialize motion sensor with our configuration
+    result = Api_motion_init(&config);
+	
+    if (result != MOTION_SUCCESS) {
+        printf_uart("Motion sensor init failed: %d\r\n", result);
+        return false;
+    }
+    else {
+        s_sensor_config.motion_sensor_mounted |= LIS2DH12;
+        s_tag_config.mounted_sensors = s_sensor_config.motion_sensor_mounted;  // Update tag config
+    }
+    
+    // Disable motion detection interrupt (polling mode)
+	result = Api_motion_disable_interrupt();
+    if (result != MOTION_SUCCESS) {
+        printf_uart("Interrupt disable failed: %d\r\n", result);
+        return false;
+    }
+    
+    
+    printf_uart("Motion detection initialized successfully (polling mode)\r\n");
+    return true;
 }
 

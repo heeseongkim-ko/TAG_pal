@@ -41,6 +41,8 @@ static bool drv_uwb_tx_enabled_b = false;
 static bool drv_uwb_tx_afterSleep_b = false;
 static bool drv_uwb_tx_afterRx_b = false;
 
+static bool drv_uwb_tx_try_b = false;
+
 // ========================================================================================
 // Private Function Declarations
 // ========================================================================================
@@ -131,8 +133,7 @@ static void uwb_tx_state_wait_tx_complete(void)
 		{
 			LOG_API_UWB("UWB TX timeout error:0x%X\r\n", l_status);
 			drv_uwb_tx_state_g = UWB_TX_STATE_IDLE;
-			
-			Api_failsafe_set_uwb_fail(UWB_FAIL_TX_01);
+			drv_uwb_tx_enabled_b = false;
 		}
 	}
 }
@@ -147,7 +148,6 @@ static void uwb_tx_state_clear_status(void)
 {
 	dwt_writesysstatuslo(DWT_INT_TXFRS_BIT_MASK);
 	drv_uwb_tx_state_g = UWB_TX_STATE_COMPLETE;
-	Api_failsafe_set_uwb_fail(UWB_FAIL_NONE);
 }
 
 /**
@@ -220,6 +220,16 @@ void Drv_uwb_tx_set_enabled(bool enabled)
 	drv_uwb_tx_enabled_b = enabled;
 }
 
+void Drv_uwb_tx_set_try(bool enabled)
+{
+	drv_uwb_tx_try_b = enabled;
+}
+
+bool Drv_uwb_tx_get_try(void)
+{
+	return drv_uwb_tx_try_b;
+}
+
 /**
  * @brief Get TX message
  */
@@ -244,7 +254,7 @@ bool Drv_uwb_tx_set_message(const uint8_t *msg, uint8_t length)
 		return false;
 	}
 	memcpy(drv_uwb_tx_msg_g, msg, length);
-	drv_uwb_tx_msg_length_ui8 = length;
+	drv_uwb_tx_msg_length_ui8 = length + 2u;
 	return true;
 }
 
@@ -277,6 +287,8 @@ bool Drv_uwb_tx_set_message(const uint8_t *msg, uint8_t length)
 API_UWB_STATUS_e Drv_uwb_tx_machine(void)
 {
 	uint8_t tx_option = DWT_START_TX_IMMEDIATE;
+	uint32_t l_status;
+	int tx_result;
 	
 	// Early return if device not ready or not in START state
 	if (!Drv_uwb_get_device_wakeup()) 
@@ -289,7 +301,38 @@ API_UWB_STATUS_e Drv_uwb_tx_machine(void)
 		return API_UWB_STATUS_IDLE;
 	}
 	
-	LOG_API_UWB("%s - Start blocking TX\r\n", __func__);
+	LOG_API_UWB("%s - Start TX\r\n", __func__);
+	
+	// Check previous TX result
+	l_status = dwt_readsysstatuslo();
+		
+	// Clear all status except error flag before sleep
+	dwt_writesysstatuslo(SYS_STATUS_HPDWARN_BIT_MASK | SYS_STATUS_TXFRS_BIT_MASK);
+	if (l_status & SYS_STATUS_HPDWARN_BIT_MASK)
+	{
+		// Previous TX error
+		Api_failsafe_set_fail(FAILSAFE_CODE_03);
+		LOG_API_UWB("Previous TX error (HPDWARN)\r\n");
+		return API_UWB_STATUS_FAIL;
+	}
+	else if (l_status & SYS_STATUS_TXFRS_BIT_MASK)
+	{
+		// Previous TX success
+		Api_failsafe_set_success(FAILSAFE_CODE_03);
+		LOG_API_UWB("Previous TX success\r\n");
+	}
+	else
+	{
+        #if  0
+		if  (drv_uwb_tx_try_b == true)
+		{
+			drv_uwb_tx_try_b = false;
+			Api_failsafe_set_fail(FAILSAFE_CODE_03);
+			LOG_API_UWB("Previous TX error (NONE)\r\n");
+			return API_UWB_STATUS_FAIL;
+		}
+        #endif
+	}
 	
 	// Configure post-TX behavior
 	if (Drv_uwb_tx_get_afterRx())
@@ -297,10 +340,10 @@ API_UWB_STATUS_e Drv_uwb_tx_machine(void)
 		dwt_entersleepaftertx(0u);
 		tx_option |= DWT_RESPONSE_EXPECTED;
 		dwt_setrxaftertxdelay(60);
-		dwt_setrxtimeout(5000);	// usec
+		dwt_setrxtimeout(Drv_uwb_rx_get_timeout()*1000);
+		Drv_uwb_set_sequence_timeout_timer(Drv_uwb_rx_get_timeout());
 		
 		Drv_uwb_rx_set_enabled(true);
-
 		Drv_uwb_rx_set_state(UWB_RX_STATE_WAIT_AND_PROCESS);
 	}
 	else
@@ -315,20 +358,31 @@ API_UWB_STATUS_e Drv_uwb_tx_machine(void)
 			dwt_entersleepaftertx(0u);
 		}
 	}
-	
+		
 	// Prepare and transmit
 	dwt_writetxdata(drv_uwb_tx_msg_length_ui8, drv_uwb_tx_msg_g, 0);
 	dwt_writetxfctrl(drv_uwb_tx_msg_length_ui8, 0, 0);
-	dwt_starttx(tx_option);
 	
-	LOG_API_UWB("TX complete (len=%d, seq=%d)\r\n", 
+	tx_result = dwt_starttx(tx_option);
+	
+	if (tx_result != DWT_SUCCESS)
+	{
+		// TX start failed (HW level error)
+		Api_failsafe_set_fail(FAILSAFE_CODE_03);
+		LOG_API_UWB("TX start failed\r\n");
+		drv_uwb_tx_state_g = UWB_TX_STATE_IDLE;
+		drv_uwb_tx_enabled_b = false;
+		return API_UWB_STATUS_FAIL;
+	}
+	
+	LOG_API_UWB("TX started (len=%d, seq=%d)\r\n", 
 	            drv_uwb_tx_msg_length_ui8, 
-	            drv_uwb_tx_msg_g[7]);
+	            drv_uwb_tx_msg_g[7]);	
 	
 	// Update state
-	Api_failsafe_set_uwb_fail(UWB_FAIL_NONE);
 	drv_uwb_tx_state_g = UWB_TX_STATE_IDLE;
 	drv_uwb_tx_enabled_b = false;
+	drv_uwb_tx_try_b = true;
 	
 	return API_UWB_STATUS_SUCCESS;
 }

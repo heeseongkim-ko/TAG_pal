@@ -68,6 +68,8 @@ void UART_LOG_UNINIT(void);
  */
 void printf_uart(const char* format, ...);
 
+void printf_uart2(const char* format, ...);
+
 /**
  * @brief Directly send string to UART
  * @details Transmits string directly without formatting.
@@ -78,14 +80,16 @@ void printf_uart(const char* format, ...);
  */
 void uart_send_string(const char* str);
 
-#define LOG_API_BLE	//printf_uart2
-#define LOG_API_NFC	//printf_uart//printf_uart2
-#define LOG_API_UWB	//printf_uart//printf_uart2
-#define	LOG_API_IMU	//printf_uart//printf_uart2
-#define	LOG_API_LED	//printf_uart//printf_uart2
-#define LOG_API_BAT     //printf_uart//printf_uart2
-#define LOG_API_SLEEP   //printf_uart//printf_uart2
-#define LOG_API_FAIL    printf_uart//printf_uart2
+#define LOG_API_BLE	// printf_uart2
+#define LOG_API_NFC	// printf_uart2
+#define LOG_API_UWB	// printf_uart2
+#define	LOG_API_IMU	// printf_uart2
+#define	LOG_API_LED	// printf_uart2
+#define LOG_API_BAT     //printf_uart2
+#define LOG_API_SLEEP  //printf_uart2
+#define LOG_API_FAIL  //	printf_uart2
+#define LOG_API_VER	//	printf_uart2
+#define LOG_DRV_FAIL    //printf_uart2
 /** @} */
 
 #ifdef __cplusplus

@@ -77,7 +77,13 @@ void Aply_tag_scheduler_init(void)
 void Aply_tag_scheduler_normal_process_cycle_complete(void)
 {
 	// Decrement packet counters
-	if (s_normal_bc_enabled) s_normal_bc_packet_counter--;
+	if (s_motion_sleep_flag) {
+		// Motion sleep mode: use motion sleep BC counter
+		if (s_motion_sleep_bc_enabled) s_motion_sleep_bc_packet_counter--;
+	} else {
+		// Normal mode: use normal BC counter
+		if (s_normal_bc_enabled) s_normal_bc_packet_counter--;
+	}
 	s_bat_packet_counter--;
 	s_led_counter--;
 	s_battery_check_counter--;
@@ -87,10 +93,18 @@ void Aply_tag_scheduler_normal_process_cycle_complete(void)
 	bool bc_flag = false;
 	
 	// Process BC packet functionality (only if enabled)
-	if (s_normal_bc_enabled && s_normal_bc_packet_counter == 0) 
-	{
-		bc_flag = true;
-		s_normal_bc_packet_counter = Aply_tag_configuration_get_field(CONFIG_FIELD_BC_PERIOD_RI);
+	if (s_motion_sleep_flag) {
+		// Motion sleep mode: use motion sleep BC counter
+		if (s_motion_sleep_bc_enabled && s_motion_sleep_bc_packet_counter == 0) {
+			bc_flag = true;
+			s_motion_sleep_bc_packet_counter = Aply_tag_configuration_get_field(CONFIG_FIELD_BC_PERIOD_RISM);
+		}
+	} else {
+		// Normal mode: use normal BC counter
+		if (s_normal_bc_enabled && s_normal_bc_packet_counter == 0) {
+			bc_flag = true;
+			s_normal_bc_packet_counter = Aply_tag_configuration_get_field(CONFIG_FIELD_BC_PERIOD_RI);
+		}
 	}
 	
 	// Process info packet functionality (send 3 times at startup)
@@ -265,3 +279,14 @@ void Aply_tag_scheduler_reset_motion_sleep_counter(void)
 	
 	s_motion_sleep_counter = (l_tx_interval_ms > 0) ? (l_motion_sleep_time_ms / l_tx_interval_ms) : 30;
 }
+
+/**
+ * @brief Set LED counter to 1 for backchannel LED control
+ * @details Sets the LED counter to 1 to trigger immediate LED blink on next cycle
+ * @return None
+ */
+void Aply_tag_scheduler_set_led_counter_backchannel(void)
+{
+	s_led_counter = 1;
+}
+

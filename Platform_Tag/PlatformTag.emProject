@@ -137,6 +137,7 @@
         <file file_name="SDK_nRF/modules/nrfx/drivers/src/nrfx_timer.c" />
         <file file_name="SDK_nRF/modules/nrfx/drivers/src/nrfx_saadc.c" />
         <file file_name="SDK_nRF/modules/nrfx/hal/nrf_uart.h" />
+        <file file_name="SDK_nRF/modules/nrfx/drivers/src/nrfx_wdt.c" />
       </folder>
       <folder Name="nRF_DFU">
         <file file_name="SDK_nRF/components/ble/ble_services/ble_dfu/ble_dfu.c" />
@@ -223,6 +224,11 @@
         <file file_name="Api/Driver/Drv_uwb_power.c" />
         <file file_name="Api/Driver/Drv_uwb_spi.c" />
         <file file_name="Api/Driver/Drv_failsafe.c" />
+        <file file_name="Api/Driver/Drv_failsafe_uwb.c" />
+        <file file_name="Api/Driver/Drv_failsafe_watchdog.c" />
+        <file file_name="Api/Driver/Drv_failsafe_clock.c" />
+        <file file_name="Api/Driver/Drv_failsafe_battery.c" />
+        <file file_name="Api/Driver/Drv_failsafe_memory.c" />
       </folder>
       <file file_name="Api/Api_uwb_param.c" />
       <file file_name="Api/Api_Led.c" />
@@ -245,13 +251,13 @@
       <file file_name="Aply/Aply_uwb_rx.h" />
       <file file_name="Aply/Aply_nfc.c" />
       <file file_name="Aply/Aply_nfc.h" />
+      <file file_name="Aply/Aply_backchannel_app.c" />
+      <file file_name="Aply/Aply_backchannel_app.h" />
       <file file_name="Aply/Func_UART_LOG.c" />
       <file file_name="Aply/Func_UART_LOG.h" />
       <file file_name="Aply/def_config.h" />
       <file file_name="Aply/def_packet.h" />
       <file file_name="Aply/def_pin.h" />
-      <file file_name="Aply/Func_TEIA_ROUTINES.c" />
-      <file file_name="Aply/Func_TEIA_ROUTINES.h" />
     </folder>
   </project>
   <configuration

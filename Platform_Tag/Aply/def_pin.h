@@ -63,7 +63,7 @@
  * @brief TEIA platform pin definitions (active configuration)
  * @details These are the currently active pin definitions used by the TEIA platform.
  */
-#if 1
+#if 0//1
 /**
  * @defgroup PIN_TEIA_LED TEIA LED Pins
  * @{

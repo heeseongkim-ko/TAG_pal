@@ -28,6 +28,8 @@
 #include "Api_sleep_peripheral.h"
 #include "Api_failsafe.h"
 #include "Api_ble.h"
+#include "Api_Led.h"
+#include "Api_battery.h"
 
 /*==============================================================================
  * Private Variables
@@ -295,10 +297,6 @@ extern void Aply_timer_start(void);
 
 void Api_sleep_core(void)
 {
-	if  (Api_failsafe_get_activated())
-	{
-		return;
-	}
 #if	0//def SOFTDEVICE_PRESENT
     if (nrf_sdh_is_enabled())
     {
@@ -338,7 +336,6 @@ void check_clock_status(void)
     LOG_API_SLEEP("LFCLKSTAT: 0x%08X\r\n", NRF_CLOCK->LFCLKSTAT);
     
     LOG_API_SLEEP("HFCLKRUN: %u\r\n", NRF_CLOCK->HFCLKRUN);
-    printf_uart("LFCLKRUN: %u\r\n", NRF_CLOCK->LFCLKRUN);
     
     LOG_API_SLEEP("===================\r\n\r\n");
 }
@@ -383,14 +380,14 @@ void Api_sleep_configure_unused_pins(void)
  * @note This function returns immediately if no sleep request is pending
  */
 void Api_sleep_main(void)
-{
-	/* Early return if no sleep request is pending */
-	if (api_sleep_request_b == false)
+{	
+	if  ((Api_failsafe_isRecovery()) || (Api_failsafe_isMajor()))
 	{
 		return;
 	}
-
-	if  (Api_failsafe_get_activated())
+	
+	/* Early return if no sleep request is pending */
+	if (api_sleep_request_b == false)
 	{
 		return;
 	}
@@ -400,6 +397,24 @@ void Api_sleep_main(void)
 		return;
 	}	
 
+	if  (Api_Led_IsActive() == true)
+	{
+	#if  1
+		while(1)
+		{
+			if  (Api_sleep_getWakeupReason() & API_SLEEP_WAKEUP_REASON_MASK_TICK_TIMER)
+			{
+				break;
+			}
+			Api_sleep_core();
+		}
+	#endif
+	
+		Api_sleep_claerWakeupReasonMask(API_SLEEP_WAKEUP_REASON_MASK_TICK_TIMER);
+
+		return;
+	}
+	
 	api_sleep_request_b = false;
 
 	Aply_timer_stop();
@@ -431,14 +446,21 @@ void Api_sleep_main(void)
 	}
 		
 	nrf_drv_clock_hfclk_request(NULL);
-	
-	while (!nrf_drv_clock_hfclk_is_running())    
+		
+	if (Api_failsafe_clock_check_hfclk_start())
 	{
+		Api_failsafe_set_success(FAILSAFE_CODE_16);
+	}
+	else
+	{
+		Api_failsafe_set_fail(FAILSAFE_CODE_16);
 	}
 
 	Api_sleep_peripheral_enable_after_wakeup();
 
-	sleep_timer_stop();    
+	sleep_timer_stop();
+
+	Api_failsafe_battery_time_update(api_sleep_time_ui32);
 
 	if  (Api_sleep_getWakeupReason() & API_SLEEP_WAKEUP_REASON_MASK_TIMER)
 	{
@@ -460,6 +482,8 @@ void Api_sleep_main(void)
 	{
 		LOG_API_SLEEP("Wakeup : ALL\r\n");
 	}
+
+	Api_battery_startRead();
 	Aply_timer_start();
 }
 

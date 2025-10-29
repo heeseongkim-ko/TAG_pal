@@ -13,7 +13,7 @@
  * @brief Initialize SPI for UWB
  * @param fastRate true for fast rate, false for slow rate
  */
-void Drv_uwb_spi_init(bool fastRate);
+uint32_t Drv_uwb_spi_init(bool fastRate);
 
 /**
  * @brief Uninitialize SPI for UWB

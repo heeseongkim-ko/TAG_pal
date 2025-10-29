@@ -26,6 +26,7 @@
 #include "nrf_delay.h"
 #include "Port.h"
 #include "Api_uwb.h"
+#include "Api_failsafe.h"
 #include "Drv_uwb.h"
 #include "Drv_uwb_spi.h"
 #include "Drv_uwb_internal.h"
@@ -450,8 +451,19 @@ uint32_t Api_uwb_get_rx_timeout(void)
  * @param fastRate true for fast rate (32MHz), false for slow rate (4MHz)
  */
 void Api_uwb_spi_init(bool fastRate)
-{
-	Drv_uwb_spi_init(fastRate);
+{	
+	uint32_t ret;
+	
+	ret = Drv_uwb_spi_init(fastRate);
+
+	if  (ret == NRF_SUCCESS)
+	{
+		Api_failsafe_set_success(FAILSAFE_CODE_12);
+	}
+	else
+	{
+		Api_failsafe_set_fail(FAILSAFE_CODE_12);
+	}
 }
 
 /**
@@ -595,6 +607,7 @@ bool Api_uwb_start_rx(void)
 	Drv_uwb_rx_set_enabled(true);
 	if (Drv_uwb_rx_get_state() == UWB_RX_STATE_IDLE) {
 		Drv_uwb_rx_set_state(UWB_RX_STATE_ENABLE_RX);
+		Drv_uwb_set_sequence_timeout_timer(Drv_uwb_rx_get_timeout());
 	}
 	return true;
 }
@@ -750,7 +763,7 @@ void Api_uwb_init_system(void)
  * @see Api_uwb_timer_tick() - Must be called every 1ms for timing control
  */
 void Api_uwb_main(void)
-{
+{	
 	// 1. Device initialization (if not complete)
 	Drv_uwb_init_process_state_machine();
 	

@@ -47,6 +47,7 @@ typedef struct {
 	uint8_t motion_sleep_time[4];		/**< Motion sleep entry time in milliseconds */
 	uint8_t random_dev;					/**< Random deviation of TDOA blink refreshrate */
 	uint8_t mcr_threshold[2];			/**< No motion - acceleration threshold */
+	uint8_t motion_threshold;			/**< Motion detection threshold (0-127) */
 	
 	// Sensor configuration
 	uint8_t mounted_sensors;			/**< Each bit represents one sensor, if set: concrete sensor is mounted on tag */
@@ -84,6 +85,7 @@ typedef enum {
 	CONFIG_FIELD_BC_VERSION,
 	CONFIG_FIELD_BC_PERIOD_RI,
 	CONFIG_FIELD_BC_PERIOD_RISM,
+	CONFIG_FIELD_MOTION_THRESHOLD,
 	// Array fields for get_array_field function
 	CONFIG_FIELD_HW_VER,
 	CONFIG_FIELD_FW_VER,
@@ -201,6 +203,24 @@ bool Aply_tag_configuration_set_array_field(config_field_e field, uint8_t index,
  * @return None
  */
 void Aply_tag_configuration_load_from_nfc(const nfc_eeprom_tag_config_data_t* nfc_data);
+
+/**
+ * @brief Generate and store UWB MAC address
+ * @details Generates a unique MAC address for UWB communication and stores it
+ *          in the global MAC header structure. Sets default frame code and
+ *          initializes sequence number.
+ * @return None
+ * @note This function must be called after UWB system initialization.
+ *       The generated MAC address is stored in g_mac_header.MAC_addr.
+ */
+void Aply_get_uwb_mac_address(void);
+
+/**
+ * @brief Initialize LIS2DH12 for motion detection
+ * @details Configures LIS2DH12 accelerometer for low-power motion detection
+ * @return true if initialization successful, false otherwise
+ */
+bool Aply_tag_configuration_init_motion_detection(void);
 
 
 #ifdef __cplusplus

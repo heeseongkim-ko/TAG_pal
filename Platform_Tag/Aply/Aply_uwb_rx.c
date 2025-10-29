@@ -15,6 +15,7 @@
 static uint8_t s_rx_buffer[100];
 static uint16_t s_rx_data_length = 0;
 static bool s_bc_data_received = false;
+static uint8_t s_bc_ack_number[6]; // ACK number extracted from BD packet
 
 // Static variables for RX processing
 static uint8_t s_rx_temp_buffer[100]; // Temporary RX buffer
@@ -71,16 +72,10 @@ bool Aply_uwb_rx_process_data(void)
 	}
 	memcpy(s_rx_temp_buffer, rx_msg.data, s_rx_temp_length);
 	
-	//printf_uart("[RX : %d] : ", s_rx_temp_length);
-	//for (uint16_t i = 0; i < s_rx_temp_length; i++) {
-	//	printf_uart("%02X ", s_rx_temp_buffer[i]);
-	//}
-	//printf_uart("\r\n");
-	
 	// Step 2.5: Check FCODE (only process BC_DATA)
-	// if (s_rx_temp_buffer[0] != 0xBD) { // UWB_FCODE_BC_DATA
-	//	return false; // Not BC_DATA
-	// }
+	if (s_rx_temp_buffer[0] != 0xBD) { // UWB_FCODE_BC_DATA
+		return false; // Not BC_DATA
+	}
 	
 	// Step 3: Check MAC address
 	// Get tag MAC address (cached after first call)
@@ -107,19 +102,22 @@ bool Aply_uwb_rx_process_data(void)
 		return false; // Not for this tag
 	}
 	
-	// Step 4: Store if valid
-	if (s_rx_temp_length <= sizeof(s_rx_buffer)) {
+	// Step 4: Parse BD packet and extract ACK number
+	if (s_rx_temp_length >= 14) { // BD packet minimum length: BD(1) + MAC(6) + SEQ(1) + ACK(6) = 14
+		// Extract ACK number from BD packet (bytes 8-13)
+		memcpy(s_bc_ack_number, &s_rx_temp_buffer[8], 6);
+		
 		memcpy(s_rx_buffer, s_rx_temp_buffer, s_rx_temp_length);
 		s_rx_data_length = s_rx_temp_length;
 		s_bc_data_received = true;
 		
-		//printf_uart("[RX : %d] : ", s_rx_temp_length);
-		//for (uint16_t i = 0; i < s_rx_temp_length; i++) {
-		//	printf_uart("%02X ", s_rx_temp_buffer[i]);
-		//}
-		//printf_uart("\r\n");
+		printf_uart("[RX : %d] : ", s_rx_temp_length);
+		for (uint16_t i = 0; i < s_rx_temp_length; i++) {
+			printf_uart("%02X ", s_rx_temp_buffer[i]);
+		}
+		printf_uart("\r\n");
 		
-		reset_bc_rx_timeout();
+		//reset_bc_rx_timeout();
 		
 		return true;
 	}
@@ -155,9 +153,57 @@ bool Aply_uwb_rx_start_backchannel(void)
 	// 	return false;
 	// }
 	
-	s_bc_rx_timeout_counter = 100;  // 3ms default timeout
-	s_bc_rx_timeout_enabled = true;
-	s_bc_data_received = false;
+	//s_bc_rx_timeout_counter = 100;  // 3ms default timeout
+	//s_bc_rx_timeout_enabled = true;
+	//s_bc_data_received = false;
 	
 	return true;
+}
+
+/**
+ * @brief Get ACK number from last received BD packet
+ * @param[out] ack_number Buffer to store ACK number (6 bytes)
+ * @return true if ACK number is available, false otherwise
+ */
+bool Aply_uwb_rx_get_ack_number(uint8_t* ack_number)
+{
+	if (ack_number == NULL || !s_bc_data_received) {
+		return false;
+	}
+	
+	memcpy(ack_number, s_bc_ack_number, 6);
+	return true;
+}
+
+bool Aply_uwb_rx_is_bc_data_received(void)
+{
+	return s_bc_data_received;
+}
+
+void Aply_uwb_rx_clear_bc_data_received(void)
+{
+	s_bc_data_received = false;
+}
+
+const uint8_t* Aply_uwb_rx_get_buffer(void)
+{
+	if (!s_bc_data_received) {
+		return NULL;
+	}
+	return s_rx_buffer;
+}
+
+uint16_t Aply_uwb_rx_get_buffer_length(void)
+{
+	if (!s_bc_data_received) {
+		return 0;
+	}
+	return s_rx_data_length;
+}
+
+void Aply_uwb_rx_clear_buffer(void)
+{
+	s_bc_data_received = false;
+	s_rx_data_length = 0;
+	memset(s_rx_buffer, 0, sizeof(s_rx_buffer));
 }

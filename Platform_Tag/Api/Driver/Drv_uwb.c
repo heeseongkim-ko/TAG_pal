@@ -66,8 +66,11 @@ void Drv_uwb_init_system(void)
 void Drv_uwb_init_variables(void)
 {
 	Drv_uwb_init_set_state(DEVICE_INIT_STATE_IDLE);
+	Drv_uwb_set_device_ready(false);
+	Drv_uwb_set_device_wakeup(false);
 	Drv_uwb_tx_set_state(UWB_TX_STATE_IDLE);
 	Drv_uwb_tx_set_enabled(false);
+	Drv_uwb_tx_set_try(false);
 	Drv_uwb_rx_set_state(UWB_RX_STATE_IDLE);
 	Drv_uwb_rx_set_enabled(false);
 	Drv_uwb_rx_set_data_available(false);
@@ -77,8 +80,6 @@ void Drv_uwb_init_variables(void)
 	Drv_uwb_power_set_sleep_state(UWB_SLEEP_STATE_IDLE);
 	Drv_uwb_set_sequence_timer(0);
 	Drv_uwb_set_sequence_timeout_timer(0);
-	Drv_uwb_set_device_ready(false);
-	Drv_uwb_set_device_wakeup(false);
 }
 
 /**
@@ -108,20 +109,7 @@ void Drv_uwb_timer_tick(void)
  */
 void Drv_uwb_reset_all_states(void)
 {
-	Drv_uwb_init_set_state(DEVICE_INIT_STATE_IDLE);
-	Drv_uwb_set_device_ready(false);
-	Drv_uwb_set_device_wakeup(false);
-	Drv_uwb_tx_set_state(UWB_TX_STATE_IDLE);
-	Drv_uwb_tx_set_enabled(false);
-	Drv_uwb_rx_set_state(UWB_RX_STATE_IDLE);
-	Drv_uwb_rx_set_enabled(false);
-	Drv_uwb_rx_set_data_available(false);
-	Drv_uwb_rx_set_timeout(UWB_RX_TIMEOUT_DEFAULT_MS);
-	Drv_uwb_rx_clear_message();
-	Drv_uwb_power_set_wakeup_state(UWB_WAKEUP_STATE_IDLE);
-	Drv_uwb_power_set_sleep_state(UWB_SLEEP_STATE_IDLE);
-	Drv_uwb_set_sequence_timer(0);
-	Drv_uwb_set_sequence_timeout_timer(0);
+	Drv_uwb_init_variables();
 }
 
 // ========================================================================================

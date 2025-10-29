@@ -379,6 +379,7 @@ uwb_sleep_state_e Api_uwb_get_sleep_state(void);
  */
 void Api_uwb_reset_init(void);
 
+
 // ========================================================================================
 // UWB Configuration Functions - Runtime Configurable Parameters
 // ========================================================================================

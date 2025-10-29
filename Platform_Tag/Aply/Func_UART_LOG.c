@@ -23,6 +23,8 @@
 #define UART_TX_PIN_NUMBER_TEIA NRF_GPIO_PIN_MAP(0,26)  /**< UART TX pin for TEIA platform */
 #define UART_RX_PIN_NUMBER_TEIA NRF_GPIO_PIN_MAP(0,19)  /**< UART RX pin for TEIA platform */
 
+bool uart_log_init_b = false;
+
 /**
  * @defgroup UART_Static_Variables Static Variables
  * @{
@@ -41,7 +43,7 @@ static nrfx_uarte_config_t uarte_config = {
     .pselcts = 0xFFFFFFFF,                 /**< CTS not used */
     .hwfc = UART_HWFC_TEIA,                /**< Hardware flow control disabled */
     .parity = NRF_UARTE_PARITY_EXCLUDED,   /**< No parity */
-    .baudrate = NRF_UARTE_BAUDRATE_115200,//NRF_UARTE_BAUDRATE_921600, /**< 115200 baud rate */
+    .baudrate = NRF_UARTE_BAUDRATE_921600, /**< 115200 baud rate */
     .interrupt_priority = NRFX_UARTE_DEFAULT_CONFIG_IRQ_PRIORITY,  /**< Default interrupt priority */
     .p_context = NULL                       /**< No context pointer */
 };
@@ -72,6 +74,7 @@ void UART_LOG_INIT(void)
         // Handle error if needed
         return;
     }
+	uart_log_init_b = true;
 }
 
 /**
@@ -81,6 +84,8 @@ void UART_LOG_INIT(void)
  */
 void UART_LOG_UNINIT(void)
 {
+	uart_log_init_b = false;
+
     nrfx_uarte_uninit(&uarte_instance);
 }
 
@@ -135,8 +140,61 @@ void printf_uart(const char* format, ...)
 }
 
 #else
+/**
+ * @brief Print formatted string to UART with timestamp
+ * @param format Format string (printf style)
+ * @param ... Variable arguments
+ * @note log_timer is uint32_t
+ */
+void printf_uart2(const char* format, ...)
+{
+	if  (uart_log_init_b == false)
+	{
+		return;
+	}
+#if 0
+	static char log_buffer[280];  // Static to prevent stack issues with async UART
+	char buffer[256];
+	va_list args;
+	uint32_t offset = 0;
+	
+	// Option 1: Simple millisecond timestamp [12345ms]
+	offset = snprintf(log_buffer, sizeof(log_buffer), "[%lums] ", log_timer);
+	
+	// Option 2: Seconds.milliseconds format [12.345s]
+	// uint32_t seconds = log_timer / 1000;
+	// uint32_t millis = log_timer % 1000;
+	// offset = snprintf(log_buffer, sizeof(log_buffer), "[%lu.%03lus] ", seconds, millis);
+	
+	// Option 3: Minutes:Seconds.milliseconds [00:12.345]
+	// uint32_t minutes = log_timer / 60000;
+	// uint32_t seconds = (log_timer / 1000) % 60;
+	// uint32_t millis = log_timer % 1000;
+	// offset = snprintf(log_buffer, sizeof(log_buffer), "[%02lu:%02lu.%03lu] ", 
+	//                   minutes, seconds, millis);
+	
+	// Format the actual message
+	va_start(args, format);
+	vsnprintf(buffer, sizeof(buffer), format, args);
+	va_end(args);
+	
+	// Append message to timestamp
+	snprintf(log_buffer + offset, sizeof(log_buffer) - offset, "%s", buffer);
+	
+	// Send string using nrfx_uarte
+	uint32_t len = strlen(log_buffer);
+	if (len > 0) 
+	{
+		nrfx_uarte_tx(&uarte_instance, (uint8_t*)log_buffer, len);
+	}
+#endif
+}
+
+
+
 void printf_uart(const char* format, ...)
 {
+#if  0
     char buffer[256];
     va_list args;
     
@@ -149,6 +207,7 @@ void printf_uart(const char* format, ...)
     if (len > 0) {
         nrfx_uarte_tx(&uarte_instance, (uint8_t*)buffer, len);
     }
+  #endif
 }
 #endif
 

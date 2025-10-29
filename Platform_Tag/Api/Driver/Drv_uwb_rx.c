@@ -73,7 +73,6 @@ static void uwb_rx_state_enable_rx(void)
 {
 	dwt_rxenable(DWT_START_RX_IMMEDIATE);
 	drv_uwb_rx_state_g = UWB_RX_STATE_WAIT_AND_PROCESS;
-	Drv_uwb_set_sequence_timeout_timer(UWB_RX_TIMEOUT_COUNT);
 	LOG_API_UWB("UWB RX enabled\r\n");
 }
 
@@ -87,6 +86,8 @@ static void uwb_rx_state_enable_rx(void)
 static void uwb_rx_state_wait_and_process(void)
 {
 	uint32_t l_status = dwt_readsysstatuslo();
+	
+	Drv_uwb_set_sequence_timer(1);
 	
 	// Check for RX completion or timeout
 	if (l_status & DWT_INT_RXFCG_BIT_MASK) 
@@ -142,19 +143,19 @@ static void uwb_rx_state_wait_and_process(void)
 	else if (l_status & DWT_INT_RXFTO_BIT_MASK) 
 	{
 		// RX timeout occurred
-		LOG_API_UWB("UWB RX timeout\r\n");
+		LOG_API_UWB("UWB RX UWB timeout\r\n");
 		dwt_writesysstatuslo(DWT_INT_RXFCG_BIT_MASK | DWT_INT_RXFTO_BIT_MASK);
-		drv_uwb_rx_state_g = UWB_RX_STATE_COMPLETE;
-		
+		drv_uwb_rx_state_g = UWB_RX_STATE_ENABLE_RX;		
 	} 
 	else 
 	{
 		// Still waiting for RX completion
 		if (Drv_uwb_get_sequence_timeout_timer() == 0u) 
 		{
-			LOG_API_UWB("UWB RX timeout error\r\n");
+			LOG_API_UWB("UWB RX timeout\r\n");
 			dwt_writesysstatuslo(DWT_INT_RXFCG_BIT_MASK | DWT_INT_RXFTO_BIT_MASK);
-			drv_uwb_rx_state_g = UWB_RX_STATE_COMPLETE;
+			drv_uwb_rx_state_g = UWB_RX_STATE_IDLE;
+			drv_uwb_rx_enabled_b = false;
 		}
 	}
 }
@@ -287,6 +288,11 @@ void Drv_uwb_rx_set_timeout(uint32_t timeout_ms)
 void Drv_uwb_rx_process_state_machine(void)
 {
 	if (!Drv_uwb_get_device_wakeup()) 
+	{
+		return;
+	}
+
+	if (0 != Drv_uwb_get_sequence_timer()) 
 	{
 		return;
 	}

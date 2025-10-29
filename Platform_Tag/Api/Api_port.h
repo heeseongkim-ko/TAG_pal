@@ -26,7 +26,7 @@ extern "C" {
  * Default: P1.04
  */
 #ifndef P_MOTION_I2C_SCL
-#define P_MOTION_I2C_SCL				NRF_GPIO_PIN_MAP(1,4)
+#define P_MOTION_I2C_SCL	NRF_GPIO_PIN_MAP(1,4)
 #endif
 
 /**
@@ -34,7 +34,7 @@ extern "C" {
  * Default: P0.24
  */
 #ifndef P_MOTION_I2C_SDA
-#define P_MOTION_I2C_SDA				NRF_GPIO_PIN_MAP(0,24)
+#define P_MOTION_I2C_SDA	NRF_GPIO_PIN_MAP(0,24)
 #endif
 
 /**
@@ -42,7 +42,7 @@ extern "C" {
  * Default: P0.16 as INT1 pin
  */
 #ifndef P_MOTION_INT
-#define P_MOTION_INT					NRF_GPIO_PIN_MAP(0, 16)
+#define P_MOTION_INT		NRF_GPIO_PIN_MAP(0, 16)
 #endif
 
 #ifdef __cplusplus

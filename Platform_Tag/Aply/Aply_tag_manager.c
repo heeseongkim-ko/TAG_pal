@@ -9,6 +9,7 @@
 #include "Aply_tag_manager.h"
 #include "Aply_uwb_tx.h"
 #include "Aply_uwb_rx.h"
+#include "Aply_backchannel_app.h"
 #include "Aply_tag_scheduler.h"
 #include "Aply_tag_configuration.h"
 #include "Aply_nfc.h"
@@ -50,14 +51,15 @@ extern void Aply_get_uwb_mac_address(void);
 #define UWB_STATE_TX_WAIT           3u
 #define UWB_STATE_RX_START          4u
 #define UWB_STATE_RX_WAIT           5u
-#define UWB_STATE_SLEEP_START       6u
-#define UWB_STATE_SLEEP_WAIT        7u
+#define UWB_STATE_ACK               6u
+#define UWB_STATE_SLEEP_START       7u
+#define UWB_STATE_SLEEP_WAIT        8u
 
 static tag_manager_state_e s_tag_manager_state = TAG_MANAGER_STATE_NORMAL;
 static uint32_t s_uwb_state = UWB_STATE_IDLE;           // UWB state machine state
 static uint32_t s_led_state = LED_STATE_IDLE;                     // LED state machine state
 static uint32_t s_battery_check_state = BATTERY_STATE_IDLE;       // Battery check state machine state
-
+static uint8_t back_channel_led_state = 0;
 // Static variables for NFC processing
 static bool s_nfc_field_detected = false;  // NFC field detection flag
 static bool s_first_init_flag = true;
@@ -66,6 +68,9 @@ static bool s_led_complete_flag = true;                            // LED proces
 static bool s_battery_complete_flag = true;                        // Battery check process completion flag (default ready)
 static bool s_uwb_sleep_flag = false;                              // UWB sleep flag - prevents immediate restart
 
+//----------test
+static int s_ack_retry_count = 0;
+//----------
 /**
  * @brief LED process function (internal use only)
  * @details State machine for LED control based on scheduler flags
@@ -75,32 +80,41 @@ static void management_led_process(void)
 	switch (s_led_state)
 	{
 		case LED_STATE_IDLE: // LED_IDLE - Start LED based on flag
-			if (Aply_tag_scheduler_get_led_flag())
-			{
-				Aply_tag_scheduler_clear_led_flag();
-				
-				// Get current battery voltage raw data via API (Raw ADC value)
-				uint16_t l_battery_voltage = Api_battery_getRawData();
-				
-				// Configure LED based on battery level (using existing TEIA reference values)
-				if (l_battery_voltage > 185)
-				{
-					// Battery >185 (3.65V) - Green LED, 1 time (10ms on, 1ms off)
-					Api_Led_StartBlink(API_LED_GREEN, 10, 1, 0);
+		if (Aply_tag_scheduler_get_led_flag())
+		{
+			if(Aply_backchannel_is_led_blink_requested() == true){
+				back_channel_led_state++;
+				if(back_channel_led_state > 10){
+					Aply_backchannel_clear_led_blink_requested();
+					Aply_tag_scheduler_clear_led_flag();
+					back_channel_led_state = 0;
 				}
-				else if (l_battery_voltage >= 178)
-				{
-					// Battery 178-185 (3.5V-3.65V) - Orange LED, 1 time (10ms on, 1ms off)
-					Api_Led_StartBlink(API_LED_ORANGE, 10, 1, 0);
-				}
-				else
-				{
-					// Battery <178 (3.5V) - Red LED, 1 time (10ms on, 1ms off)
-					Api_Led_StartBlink(API_LED_RED, 10, 1, 0);
-				}
-				
-				s_led_state = LED_STATE_BLINK; // Go to BLINK check
+				else Aply_tag_scheduler_set_led_counter_backchannel();
 			}
+			Aply_tag_scheduler_clear_led_flag();
+			
+			// Get current battery voltage raw data via API (Raw ADC value)
+			uint16_t l_battery_voltage = Api_battery_getRawData();
+			
+			// Configure LED based on battery level (using existing TEIA reference values)
+			if (l_battery_voltage > 185)
+			{
+				// Battery >185 (3.65V) - Green LED, 1 time (10ms on, 1ms off)
+				Api_Led_StartBlink(API_LED_GREEN, 10, 1, 0);
+			}
+			else if (l_battery_voltage >= 178)
+			{
+				// Battery 178-185 (3.5V-3.65V) - Orange LED, 1 time (10ms on, 1ms off)
+				Api_Led_StartBlink(API_LED_ORANGE, 10, 1, 0);
+			}
+			else
+			{
+				// Battery <178 (3.5V) - Red LED, 1 time (10ms on, 1ms off)
+				Api_Led_StartBlink(API_LED_RED, 10, 1, 0);
+			}
+			
+			s_led_state = LED_STATE_BLINK; // Go to BLINK check
+		}
 			break;
 			
 		case LED_STATE_BLINK: // LED_BLINK - Check if blinking (BLINK_ON/BLINK_OFF)
@@ -133,10 +147,10 @@ static void management_battery_check_process(void)
 			if (Aply_tag_scheduler_get_battery_flag())
 			{
 				Aply_tag_scheduler_clear_battery_flag();
-				if (Api_battery_startRead())
-				{
-					s_battery_check_state = BATTERY_STATE_BUSY; // Go to BUSY check
-				}
+			//	if (Api_battery_startRead())
+			//	{
+			//		s_battery_check_state = BATTERY_STATE_BUSY; // Go to BUSY check
+			//	}
 				// If start failed, stay in IDLE state
 			}
 			break;
@@ -229,9 +243,13 @@ static void management_uwb_transmission_process(void)
 				}
 				else
 				{
+                	Aply_tag_scheduler_normal_process_cycle_complete();
+                                        
 					Aply_uwb_tx_prepare_packet(); // Use Aply instead of Func_TEIA_Prepare_Packet
-					if (Aply_nfc_get_uwb_settings_changed()) {					
+
+					if (Aply_nfc_get_uwb_settings_changed() || Aply_backchannel_get_uwb_settings_changed()) {					
 						Aply_nfc_check_and_apply_uwb_settings();
+						Aply_backchannel_clear_uwb_settings_changed();
 						if (Api_uwb_start_wakeup(true))
 						{
 							s_uwb_state = UWB_STATE_WAKEUP_WAIT;						
@@ -275,8 +293,8 @@ static void management_uwb_transmission_process(void)
 					{
 						// Check if last packet was BC packet
 						if (Aply_uwb_tx_was_last_packet_bc()) {
-							//Api_uwb_start_tx(true, true);  // BC packet with RX
-							Api_uwb_start_tx(true, true);
+							Api_uwb_set_rx_timeout(3);
+							Api_uwb_start_tx(false, true);  // BC packet with RX
 						} else {
 							Api_uwb_start_tx(true, false); // Regular packet without RX
 						}
@@ -304,33 +322,96 @@ static void management_uwb_transmission_process(void)
 			{
 				// Check if this was a BC packet - if so, open RX for response
 				if (Aply_uwb_tx_was_last_packet_bc()) {
-					s_uwb_state = UWB_STATE_RX_START;
+					//s_uwb_state = UWB_STATE_RX_START;
+					s_uwb_state = UWB_STATE_RX_WAIT;
 				} else {
 					s_uwb_state = UWB_STATE_SLEEP_START;
 				}
 			}
 			break;
 			
-		case UWB_STATE_RX_START: // RX_START - Start RX for BC response
-			if (Aply_uwb_rx_start_backchannel())
+		case UWB_STATE_RX_WAIT: // RX_WAIT - Wait for RX completion or timeout
+			// Process any received data regardless of completion status
+			if (Aply_uwb_rx_process_data())
 			{
-				s_uwb_state = UWB_STATE_RX_WAIT;
+				// Valid BC data received - clear BC flag and proceed to ACK
+				Aply_uwb_tx_clear_bc_flag();
+				s_ack_retry_count = 0;
+				s_uwb_state = UWB_STATE_ACK;
 			}
-			else
+			else if (!Api_uwb_rx_is_busy())
 			{
-				s_uwb_state = UWB_STATE_SLEEP_START; // Fallback to sleep if RX fails
+				// RX completed but no valid data - clear BC flag and proceed to sleep
+				Aply_uwb_tx_clear_bc_flag();
+				s_uwb_state = UWB_STATE_SLEEP_START;
 			}
 			break;
 			
-		case UWB_STATE_RX_WAIT: // RX_WAIT - Wait for RX completion or timeout
-			// Process any received data regardless of completion status
-			//Aply_uwb_rx_process_data();
-			
+		case UWB_STATE_ACK: // ACK - Send ACK response
+#if 1
+			// Wait for RX to be inactive before sending ACK
 			if (!Api_uwb_rx_is_busy())
 			{
-				// RX completed (success or timeout) - proceed to sleep
-				s_uwb_state = UWB_STATE_SLEEP_START;
+				if (Aply_uwb_tx_send_ack_packet())
+				{
+					// ACK packet prepared - start TX
+					if (Api_uwb_start_tx(true, false)) {
+						s_uwb_state = UWB_STATE_TX_WAIT;
+					} else {
+						// TX start failed - go to sleep
+						s_uwb_state = UWB_STATE_SLEEP_START;
+					}
+				}
+				else
+				{
+					// No ACK number available - go to sleep
+					s_uwb_state = UWB_STATE_SLEEP_START;
+				}
 			}
+			// If RX is still busy, stay in ACK state and wait
+#else
+			// New ACK logic: Send ACK 3 times for reliability
+			//static int s_ack_retry_count = 0;
+			
+			// Wait for RX to be inactive before sending ACK
+			if (!Api_uwb_rx_is_busy())
+			{
+				if (s_ack_retry_count < 5)
+				{
+					if (!Api_uwb_tx_is_busy())
+					{
+						if (Aply_uwb_tx_send_ack_packet())
+						{
+								// ACK packet prepared - start TX
+							if(s_ack_retry_count != 5){
+								Api_uwb_start_tx(false, false); // No auto sleep, no RX
+								s_ack_retry_count++;
+								s_uwb_state = UWB_STATE_ACK;
+								}
+							else{
+								s_ack_retry_count = 0;
+								Api_uwb_start_tx(true, false);
+								s_uwb_state = UWB_STATE_TX_WAIT;
+							}
+						}
+						else
+						{
+							// No ACK number available - go to sleep
+							s_ack_retry_count = 0;
+							s_uwb_state = UWB_STATE_SLEEP_START;
+						}
+					}
+					// If TX is busy, stay in ACK state and wait
+				}
+				else
+				{
+					// 3 ACK transmissions completed - go to sleep
+					s_ack_retry_count = 0;
+					s_uwb_state = UWB_STATE_SLEEP_START;
+				}
+			}
+			// If RX is still busy, stay in ACK state and wait
+#endif
 			break;
 			
 		case UWB_STATE_SLEEP_START: // SLEEP_START - Start UWB device sleep process
@@ -348,7 +429,7 @@ static void management_uwb_transmission_process(void)
 			if (Api_uwb_is_sleep_complete())
 			{
 				// Process packet scheduling for next cycle
-				Aply_tag_scheduler_normal_process_cycle_complete();
+				//Aply_tag_scheduler_normal_process_cycle_complete();
 				
 				// Set sleep flag to prevent immediate restart
 				s_uwb_sleep_flag = true;
@@ -381,7 +462,7 @@ void Aply_tag_manager_init(void)
 
 void Aply_tag_manager_process(void)
 {
-	if  (Api_failsafe_get_activated() == true)
+	if  ((Api_failsafe_isRecovery()) || (Api_failsafe_isMajor()))
 	{
 		return;
 	}
@@ -394,6 +475,7 @@ void Aply_tag_manager_process(void)
 				Aply_get_uwb_mac_address();
 				Aply_nfc_check_and_init_tag_configuration();
 				Aply_tag_scheduler_init();
+				Aply_tag_configuration_init_motion_detection();
 				/* Initialize UWB TX packets */
 				Aply_uwb_tx_update_packets();
 				s_tag_manager_state = TAG_MANAGER_STATE_NORMAL;
@@ -429,7 +511,10 @@ void Aply_tag_manager_process(void)
 					
 					// Reinitialize packet scheduler with new configuration
 					Aply_tag_scheduler_init();
-					
+
+					// Initialize motion detection
+					Aply_tag_configuration_init_motion_detection();
+
 					// Update TX packets with new configuration
 					Aply_uwb_tx_update_packets();
 					
@@ -438,6 +523,16 @@ void Aply_tag_manager_process(void)
 					
 					s_nfc_field_detected = false; // Reset flag after processing
 					s_first_init_flag = false;
+				}
+				
+				// Check for backchannel data
+				if (Aply_uwb_rx_is_bc_data_received()) {
+					if (Aply_backchannel_parse_bd_packet()) {
+						// Backchannel data parsed successfully - process it
+						Aply_backchannel_process_data();
+					}
+					// Clear backchannel data after processing
+					Aply_uwb_rx_clear_bc_data_received();
 				}
 				
 				// All tasks complete - ready for sleep

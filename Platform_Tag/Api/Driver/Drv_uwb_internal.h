@@ -38,6 +38,7 @@
 #include "Func_UART_LOG.h"
 #include "def_config.h"
 #include "def_packet.h"
+#include "Dw3000_deca_regs.h"
 
 // ========================================================================================
 // Shared Constants
@@ -69,6 +70,9 @@ uwb_tx_state_e Drv_uwb_tx_get_state(void);
 void Drv_uwb_tx_set_state(uwb_tx_state_e state);
 bool Drv_uwb_tx_get_enabled(void);
 void Drv_uwb_tx_set_enabled(bool enabled);
+
+void Drv_uwb_tx_set_try(bool enabled);
+bool Drv_uwb_tx_get_try(void);
 
 void Drv_uwb_tx_set_afterSleep(bool afterSleep);
 void Drv_uwb_tx_set_afterRx(bool afterRx);

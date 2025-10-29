@@ -29,6 +29,7 @@
 #include "Api_battery.h"
 #include "Api_nfc.h"
 #include "Api_uwb.h"
+#include "Api_Led.h"
 
 /**
  * @brief Disable all UART/UARTE instances before sleep
@@ -356,9 +357,14 @@ void Api_sleep_peripheral_disable_all(void)
 void Api_sleep_peripheral_enable_after_wakeup(void)
 {
 	Api_motion_twi_init();
+	
 	Api_nfc_twi_init();
+	Api_nfc_power_on();
+	
 	Api_battery_init();
 	Api_uwb_spi_init(false);
+
+	Api_Led_Init();
 }
 
 void Api_sleep_peripheral_disable_before_sleep(void)

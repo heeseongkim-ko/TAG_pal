@@ -42,7 +42,6 @@ Purpose : Generic application start
 #include "Aply_nfc.h"
 
 #include "Func_UART_LOG.h"
-#include "Func_TEIA_ROUTINES.h"
 #include "drv_rtc.h"
 #include "def_config.h"
 #include "def_packet.h"
@@ -61,105 +60,6 @@ uint32_t BaseTimer_1000msec_ui32;
 
 volatile bool ntag_semaphore = false;
 
-extern void NFC_Timer_Tick(void);
-
-//#define DEBUG_SLEEP
-
-/**
- * @brief Check and display current clock sources status
- */
-void clock_status_check(void)
-{
-	//printf_uart2("\r\n===== Clock Status Check =====\r\n");
-	
-	// LFCLK Status
-	if (nrf_clock_lf_is_running())
-	{
-		uint32_t lfclk_src_ui32 = NRF_CLOCK->LFCLKSRC & CLOCK_LFCLKSRC_SRC_Msk;
-		
-		//printf_uart2("LFCLK: Running\r\n");
-		
-		switch (lfclk_src_ui32)
-		{
-			case CLOCK_LFCLKSRC_SRC_RC:
-				//printf_uart2("  Source: Internal RC Oscillator\r\n");
-				break;
-				
-			case CLOCK_LFCLKSRC_SRC_Xtal:
-				//printf_uart2("  Source: External 32.768kHz Crystal\r\n");
-				break;
-				
-			case CLOCK_LFCLKSRC_SRC_Synth:
-				//printf_uart2("  Source: Synthesized from HFCLK\r\n");
-				break;
-				
-			default:
-				//printf_uart2("  Source: Unknown (0x%X)\r\n", lfclk_src_ui32);
-				break;
-		}
-		
-		if (NRF_CLOCK->LFCLKSTAT & CLOCK_LFCLKSTAT_STATE_Msk)
-		{
-			//printf_uart2("  State: Active\r\n");
-		}
-	}
-	else
-	{
-		//printf_uart2("LFCLK: Not Running\r\n");
-	}
-	
-	// HFCLK Status
-	//printf_uart2("\r\n");
-	
-	if (NRF_CLOCK->HFCLKSTAT & CLOCK_HFCLKSTAT_STATE_Msk)
-	{
-		//printf_uart2("HFCLK: Running\r\n");
-		
-		if (NRF_CLOCK->HFCLKSTAT & CLOCK_HFCLKSTAT_SRC_Msk)
-		{
-			//printf_uart2("  Source: External 32MHz Crystal\r\n");
-			//printf_uart2("  Accuracy: High (+-20ppm)\r\n");
-		}
-		else
-		{
-			//printf_uart2("  Source: Internal 64MHz RC Oscillator\r\n");
-			//printf_uart2("  Accuracy: Low (+-4%%)\r\n");
-		}
-	}
-	else
-	{
-		//printf_uart2("HFCLK: Not Running\r\n");
-	}
-	
-	//printf_uart2("==============================\r\n\r\n");
-}
-
-uint16_t example_state = 0u;
-uint16_t example_state_timer = 0u;
-uint16_t example_adc_timer = 0u;
-
-void example_battery(void)
-{
-	uint16_t level;
-
-	if  (example_adc_timer > 0)
-	{
-		return;
-	}
-
-	if  (Api_battery_state() == API_BATTERY_STATE_BUSY)
-	{
-	}
-	else
-	{
-		level = Api_battery_getLevel();
-		LOG_API_BAT("BAT:%d\r\n", level);
-		Api_battery_startRead();
-		example_adc_timer = 3000;
-	}
-	
-}
-
 void Aply_timer_stop(void)
 {	
 	app_timer_stop(m_timer_base_id);
@@ -174,7 +74,6 @@ void Init_gpiote(void)
 {
 	ret_code_t err_code;
 	err_code = nrfx_gpiote_init();
-	APP_ERROR_CHECK(err_code);
 }
 
 void Timer_Counter_10msec(void)
@@ -192,7 +91,7 @@ void Timer_Counter(void)
 	Api_Led_Timer_tick();
 	Api_battery_timer_tick();
 	Api_failsafe_timer_tick();
-	Aply_uwb_rx_timer_tick(); 
+	//Aply_uwb_rx_timer_tick(); 
 
 	printf_uart_timer_tick();
 	
@@ -206,17 +105,7 @@ void Timer_Counter(void)
 			Timer_Counter_100msec();
 		}
 	}
-
-	if  (example_state_timer > 0u)
-	{
-		--example_state_timer;
-	}
-
-	if  (example_adc_timer > 0u)
-	{
-		--example_adc_timer;
-	}
-	
+    
 	Api_sleep_setWakeupReason(API_SLEEP_WAKEUP_REASON_MASK_TICK_TIMER);
 }
 
@@ -230,30 +119,45 @@ void timer_base_event_handler(void* p_context)
 
 static void clock_config(void)
 {
-	ret_code_t err_code = nrf_drv_clock_init();
+	ret_code_t err_code;
+	bool lfclk_ok_b;
+	bool hfclk_ok_b;
+	
+	err_code = nrf_drv_clock_init();
 	if (err_code != NRF_ERROR_MODULE_ALREADY_INITIALIZED)
 	{
 		APP_ERROR_CHECK(err_code);
 	}
 
-	/* Request Low Frequency Clock. */
+	/* Request Low Frequency Clock */
 	nrf_drv_clock_lfclk_request(NULL);
 
-	/* Busy-wait until LFCLK is running to ensure app_timer has a clock source. */
-	while (!nrf_clock_lf_is_running())
+	/* Check LFCLK startup with timeout */
+	lfclk_ok_b = Api_failsafe_clock_check_lfclk_start();
+	
+	if (!lfclk_ok_b)
+	{
+		Api_failsafe_set_fail(FAILSAFE_CODE_16);
+	}
+	else
 	{
 	}
 	
-#if  1
-	/* Request High Frequency Clock (External 32MHz Crystal). */
+#if 1
+	/* Request High Frequency Clock (External 32MHz Crystal) */
 	nrf_drv_clock_hfclk_request(NULL);
+	nrf_delay_ms(100);
+	
+	/* Check HFCLK startup with timeout */
+	hfclk_ok_b = Api_failsafe_clock_check_hfclk_start();
 
-	/* Busy-wait until HFCLK is running (External Crystal stabilized). */
-	while (!nrf_drv_clock_hfclk_is_running())
+	if (!hfclk_ok_b)
+	{
+		Api_failsafe_set_fail(FAILSAFE_CODE_16);
+	}
+	else
 	{
 	}
-
-	printf_uart("HFCLK: External 32MHz Crystal activated\r\n");
 #endif
 }
 
@@ -263,9 +167,6 @@ static void clock_config(void)
  */
 static void timers_init(void)
 {
-	/* Ensure LFCLK is started before using app_timer. */
-	clock_config();
-
 	// Initialize timer module.
 	uint32_t err_code = app_timer_init();
 	APP_ERROR_CHECK(err_code);
@@ -275,117 +176,15 @@ static void timers_init(void)
 	app_timer_start(m_timer_base_id, APP_TIMER_TICKS(APP_TIME_BASE), NULL);	// start when wake up from sleep
 }
 
-static bool nfc_falg = false;
-
-void nfc_read_example(void)
-{
-#if  1
-	if  (Api_nfc_is_reader_present() == true)
-	{
-		if  (nfc_falg == false)
-		{
-			uint8_t	buf[512];
-			uint16_t i;
-			printf_uart("NFC Detected\r\n");
-			nfc_falg = true;
-			Api_nfc_read_data(NFC_USER_DATA_START_ADDR, &buf[0], sizeof(buf));
-			for(i = 0; i < sizeof(buf); ++i)
-			{
-				if  ((i % 4) == 0)
-				{					 	
-					printf_uart("\r\n");
-				}
-				printf_uart("%X ", buf[i]);
-			}
-		}
-
-		if  (Api_nfc_monitor_eeprom_status() == NFC_EEPROM_WRITE_COMPLETED)
-		{
-			uint8_t	buf[512];
-			uint16_t i;
-			Api_nfc_read_data(NFC_USER_DATA_START_ADDR, &buf[0], sizeof(buf));
-			#if  0
-			for(i = 0; i < sizeof(buf); ++i)
-			{
-				if  ((i % 4) == 0)
-				{					 	
-					printf_uart("\r\n");
-				}
-				printf_uart("%X ", buf[i]);
-			}
-			printf_uart("\r\n");
-			#endif
-		}
-	}
-	else
-	{
-		if  (nfc_falg == true)
-		{
-			printf_uart("NFC Removed\r\n");
-			nfc_falg = false;
-		}
-	}
-#endif
-}
-
-#define NFC_EXAMPLE_WRITE_NUM	100
-
-void nfc_write_example(void)
-{
-	uint8_t data[NFC_EXAMPLE_WRITE_NUM];
-	uint8_t i;
-
-	for(i = 0; i < NFC_EXAMPLE_WRITE_NUM; ++i)
-	{
-		data[i] = 0x00;
-	}
-	Api_nfc_write_data(NFC_USER_DATA_START_ADDR, &data[0], NFC_EXAMPLE_WRITE_NUM);
-	
-//	Api_nfc_write_data(0x40 * 4, &data[0], sizeof(data));
-}
-
-void configure_unused_pins(void)
-{
-    // P0.0 ~ P0.31
-    for (uint32_t pin = 0; pin < 32; pin++)
-    {
-    	nrf_gpio_cfg(
-			pin,
-			NRF_GPIO_PIN_DIR_INPUT,
-			NRF_GPIO_PIN_INPUT_DISCONNECT,
-			NRF_GPIO_PIN_NOPULL,
-			NRF_GPIO_PIN_S0S1,
-			NRF_GPIO_PIN_NOSENSE
-		);
-    }
-    
-    // P1.0 ~ P1.15 (nRF52840)
-    for (uint32_t pin = 32; pin < 48; pin++)
-    {
-    	nrf_gpio_cfg(
-			pin,
-			NRF_GPIO_PIN_DIR_INPUT,
-			NRF_GPIO_PIN_INPUT_DISCONNECT,
-			NRF_GPIO_PIN_NOPULL,
-			NRF_GPIO_PIN_S0S1,
-			NRF_GPIO_PIN_NOSENSE
-		);
-    }
-}
-
-#if  0
 int main(void)
 {
-	configure_unused_pins();
+	Api_failsafe_init();
 	
-	nrf_gpio_cfg_output(DW3000_RESET_Pin);
-	nrf_gpio_pin_clear(DW3000_RESET_Pin);
+	/* Ensure LFCLK is started before using app_timer. */
+	clock_config();
 	
-	NRF_POWER->SYSTEMOFF = 1;
-}
-#else
-int main(void)
-{
+	// Api_failsafe_watchdog_init();
+	
 #ifdef  BLE_ENABLE_FOR_OTA
 	Api_ble_Init();
 #endif
@@ -394,14 +193,10 @@ int main(void)
 	/* Initialize UART for logging */
 	//debug
 	UART_LOG_INIT();
-	printf_uart("=== TagPlatform Starting ===\r\n");
-	printf_uart("UART initialized successfully\r\n");
 
 	// ===== BASIC INITIALIZATION =====
 	Init_gpiote();
-	
-	configure_unused_pins();
-	
+		
 	//Api_ble_advertising_start(false);
 	//Func_TEIA_Reset_All_Variables();  // Commented out - not used since example_application() is disabled
 	/* INITIALIZE LED start state as GREEN */
@@ -409,7 +204,6 @@ int main(void)
 
 	/* Initialize ADC */
 	Api_battery_init();
-	printf_uart("ADC initialized successfully\r\n");
 
 	/* Configuring interrupt*/
 	//Api_uwb_irq_init();
@@ -418,32 +212,17 @@ int main(void)
 	/* Small pause before startup */
 	nrf_delay_ms(2);
 	timers_init();
-	printf_uart("Timers initialized\r\n");
 
 	/* Initialize RTC2 */
 	//Func_TIMER_Init();  // Commented out - RTC2 is initialized by Api_sleep_init() instead
 
 	Api_nfc_init();
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// UWB Api Init Start
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/* Initialise the SPI for nRF52840-DK */
-	Api_uwb_spi_init(false);
-	printf_uart("UWB SPI initialized\r\n");
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Initialize motion detection
-	if (Func_Motion_Detection_Init()) {
-		printf_uart("Motion detection initialized successfully\r\n");
-	} else {
-		printf_uart("Motion detection initialization failed\r\n");
-	}
-
-	/* INITIALIZE LED end state as GREEN */
-	nrf_delay_ms(2000);
+	Aply_tag_configuration_init_default();
 
 	//Func_TEIA_Init_Tag_Info();  // Commented out - not used since example_application() is disabled
+	Aply_tag_configuration_init_motion_detection();
 
 	Api_Led_Init();
 	
@@ -461,36 +240,12 @@ int main(void)
 	Api_ble_advertising_start(false);
 #endif
 
-	Api_failsafe_init();
-
 #ifndef  DEBUG_SLEEP
 	Api_uwb_start_init();
 #endif
 
-	//LOG_API_VER("Ver B\r\n");
+	LOG_API_VER("Ver B\r\n");
 	
-	// Check clock status after all initialization
-	clock_status_check();
-
-        nfc_eeprom_tag_config_data_t config;
-        if (Aply_nfc_read_all_config(&config)) {
-            printf_uart("=== NFC Raw Data (Page 4-14) ===\r\n");
-            
-            // Print raw data page by page (4 bytes per page)
-            uint8_t* data = (uint8_t*)&config;
-            for(int page = 0; page < 11; page++) {
-                printf_uart("Page %d: ", page + 4);
-                for(int i = 0; i < 4; i++) {
-                    printf_uart("%02X ", data[page * 4 + i]);
-                }
-                printf_uart("\r\n");
-            }
-			
-            printf_uart("===============================\r\n");
-        } else {
-            printf_uart("Failed to read NFC configuration\r\n");
-        }
-        UART_LOG_UNINIT();
 
 #ifdef DEBUG_SLEEP	// Debugging sleep
 	Api_sleep_setSleepTime(1000);
@@ -519,7 +274,7 @@ int main(void)
 		Api_battery_main();
 		Api_sleep_main();
 #ifndef DEBUG_SLEEP
-		Api_failsafe_main();
+		//Api_failsafe_main();
 #endif
 		
 	#ifndef DEBUG_SLEEP
@@ -527,5 +282,4 @@ int main(void)
 	#endif
 	}
 }
-#endif
 

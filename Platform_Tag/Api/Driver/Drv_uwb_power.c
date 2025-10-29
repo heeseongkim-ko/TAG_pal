@@ -164,7 +164,6 @@ static void uwb_wakeup_state_osc_wait(void)
 		if (Drv_uwb_get_sequence_timeout_timer() == 0u) 
 		{
 			uwb_wakeup_state_error();
-			Api_failsafe_set_uwb_fail(UWB_FAIL_WAKEUP_05);
 		}
 		else
 		{
@@ -194,7 +193,6 @@ static void uwb_wakeup_state_spirdy_wait(void)
 		if (Drv_uwb_get_sequence_timeout_timer() == 0u) 
 		{
 			uwb_wakeup_state_error();
-			Api_failsafe_set_uwb_fail(UWB_FAIL_WAKEUP_03);
 			LOG_API_UWB("%s:%X\r\n", __func__, l_status);
 		}
 		else
@@ -223,7 +221,6 @@ static void uwb_wakeup_state_check_devid(void)
 	else 
 	{
 		uwb_wakeup_state_error();
-		Api_failsafe_set_uwb_fail(UWB_FAIL_WAKEUP_02);
 		LOG_API_UWB("%s:error\r\n", __func__);
 	}
 }
@@ -245,7 +242,6 @@ static void uwb_wakeup_state_check_idle(void)
 		if (Drv_uwb_get_sequence_timeout_timer() == 0u) 
 		{
 			uwb_wakeup_state_error();
-			Api_failsafe_set_uwb_fail(UWB_FAIL_WAKEUP_02);
 			LOG_API_UWB("%s\r\n", __func__);
 		}
 	}
@@ -292,9 +288,7 @@ static void uwb_wakeup_state_complete(void)
 {
 	LOG_API_UWB("%s\r\n", __func__);
 	Drv_uwb_set_device_wakeup(true);
-	drv_uwb_wakeup_state_g = UWB_WAKEUP_STATE_IDLE;
-	
-	Api_failsafe_set_uwb_fail(UWB_FAIL_NONE);
+	drv_uwb_wakeup_state_g = UWB_WAKEUP_STATE_IDLE;	
 }
 
 /**
@@ -308,6 +302,7 @@ static void uwb_wakeup_state_error(void)
 	LOG_API_UWB("%s\r\n", __func__);
 	Drv_uwb_set_device_wakeup(false);
 	drv_uwb_wakeup_state_g = UWB_WAKEUP_STATE_IDLE;
+	
 }
 
 // ========================================================================================
@@ -346,7 +341,7 @@ static void uwb_sleep_state_force_off(void)
  */
 static void uwb_sleep_state_clear_status(void)
 {
-	dwt_writesysstatuslo(0xFFFFFFFF);
+	dwt_writesysstatuslo(0xFFFFFFFFu & ~SYS_STATUS_HPDWARN_BIT_MASK);
 	drv_uwb_sleep_state_g = UWB_SLEEP_STATE_SAVE_CONTEXT;
 }
 
@@ -512,7 +507,6 @@ void Drv_uwb_set_configUpdate(bool configUpdate)
  * @warning This function blocks CPU execution during wake-up sequence.
  *          Ensure this is called from appropriate context.
  */
-#if  1
 API_UWB_STATUS_e Drv_uwb_wakeup_machine(void)
 {
 	API_UWB_STATUS_e status = API_UWB_STATUS_IDLE;
@@ -533,14 +527,12 @@ API_UWB_STATUS_e Drv_uwb_wakeup_machine(void)
 	}
 	
 	LOG_API_UWB("%s\r\n", __func__);	
-	LOG_API_UWB("Start blocking wakeup\r\n");
 	
 	// Step 1: Set SPI to slow rate for wake-up sequence
-	//status = Drv_uwb_spi_slowrate();
+	status = Drv_uwb_spi_slowrate();
 	if (status == API_UWB_STATUS_FAIL)
 	{
 		uwb_wakeup_state_error();
-		Api_failsafe_set_uwb_fail(UWB_FAIL_WAKEUP_01);
 		LOG_API_UWB("SPI slowrate failed\r\n");
 		return API_UWB_STATUS_FAIL;
 	}
@@ -581,12 +573,13 @@ API_UWB_STATUS_e Drv_uwb_wakeup_machine(void)
 			{
 				break;
 			}
+			nrf_delay_us(200);
 		}
 		
 		if (Drv_uwb_get_sequence_timeout_timer() == 0u) 
 		{
 			uwb_wakeup_state_error();
-			Api_failsafe_set_uwb_fail(UWB_FAIL_WAKEUP_04);
+			Api_failsafe_set_fail(FAILSAFE_CODE_04);
 			LOG_API_UWB("IDLE_RC timeout\r\n");
 			return API_UWB_STATUS_FAIL;
 		}
@@ -616,143 +609,14 @@ API_UWB_STATUS_e Drv_uwb_wakeup_machine(void)
 	// Mark device as awake and ready
 	Drv_uwb_set_device_wakeup(true);
 	drv_uwb_wakeup_state_g = UWB_WAKEUP_STATE_IDLE;
-	Api_failsafe_set_uwb_fail(UWB_FAIL_NONE);	
+	
+	// Clear failsafe counters on successful wakeup
+	Api_failsafe_set_success(FAILSAFE_CODE_04);
 	
 	LOG_API_UWB("Wakeup complete\r\n");
 	
 	return API_UWB_STATUS_SUCCESS;
 }
-#else
-API_UWB_STATUS_e Drv_uwb_wakeup_machine(void)
-{
-	API_UWB_STATUS_e status = API_UWB_STATUS_IDLE;
-	uint32_t l_status_ui32 = 0u;
-	uint32_t l_dev_id_ui32 = 0u;
-	uint16_t i = 0;
-	
-	if (true == Drv_uwb_get_device_wakeup()) 
-	{
-		return API_UWB_STATUS_IDLE;
-	}
-	
-	
-	if  (drv_uwb_wakeup_state_g != UWB_WAKEUP_STATE_START)
-	{
-		return API_UWB_STATUS_IDLE;
-	}
-	
-	LOG_API_UWB("%s\r\n", __func__);	
-	LOG_API_UWB("Start blocking wakeup\r\n");
-	
-	// Step 1: Set SPI to slow rate for wake-up sequence
-	status = Drv_uwb_spi_slowrate();
-	if (status == API_UWB_STATUS_FAIL)
-	{
-		uwb_wakeup_state_error();
-		Api_failsafe_set_uwb_fail(UWB_FAIL_WAKEUP_01);
-		LOG_API_UWB("SPI slowrate failed\r\n");
-		return API_UWB_STATUS_FAIL;
-	}
-	
-	// Step 2: CS toggle sequence to wake up device
-	nrf_gpio_cfg_output(DW3000_CS_Pin);
-	nrf_gpio_pin_clear(DW3000_CS_Pin);
-	nrf_delay_us(600);
-	nrf_gpio_pin_set(DW3000_CS_Pin);
-	
-	// Step 3: Wait for SPIRDY signal with timeout
-	Drv_uwb_set_sequence_timeout_timer(3000u);
-    //nrf_delay_us(800);
-	
-	i = 0;
-	while (1)
-	{
-        nrf_delay_us(100);
-
-		l_status_ui32 = dwt_readsysstatuslo();
-		
-		if (l_status_ui32 & DWT_INT_SPIRDY_BIT_MASK) 
-		{
-			LOG_API_UWB("SPIRDY detected:%d\r\n", i);
-			break;
-		} 
-		
-		if (Drv_uwb_get_sequence_timeout_timer() == 0u) 
-		{
-			uwb_wakeup_state_error();
-			Api_failsafe_set_uwb_fail(UWB_FAIL_WAKEUP_03);
-			LOG_API_UWB("SPIRDY timeout (status:0x%X)\r\n", l_status_ui32);
-			return API_UWB_STATUS_FAIL;
-		}
-		++i;
-	}
-	
-	// Step 7: Set SPI to fast rate for normal operation
-	Drv_uwb_spi_fastrate();
-	
-	// Step 4: Verify device ID
-	#if  0
-	l_dev_id_ui32 = dwt_readdevid();
-	if (l_dev_id_ui32 != 0xDECA0302u) 
-	{
-		uwb_wakeup_state_error();
-		Api_failsafe_set_uwb_fail(UWB_FAIL_WAKEUP_02);
-		LOG_API_UWB("Invalid device ID: 0x%X\r\n", l_dev_id_ui32);
-		return API_UWB_STATUS_FAIL;
-	}
-	LOG_API_UWB("Device ID verified\r\n");
-	#endif
-	
-	// Step 5: Check IDLE_RC state with timeout
-	Drv_uwb_set_sequence_timeout_timer(3000u);
-	i = 0;
-	while (1)
-	{
-		if (dwt_checkidlerc()) 
-		{
-			LOG_API_UWB("IDLE_RC confirmed:%d\r\n", i);
-			break;
-		}
-		
-		if (Drv_uwb_get_sequence_timeout_timer() == 0u) 
-		{
-			uwb_wakeup_state_error();
-			Api_failsafe_set_uwb_fail(UWB_FAIL_WAKEUP_04);
-			LOG_API_UWB("IDLE_RC timeout\r\n");
-			return API_UWB_STATUS_FAIL;
-		}		
-		++i;
-	}
-
-	// Step 6: Restore device configuration from AON memory
-	dwt_restoreconfig(1);
-	
-	// Step 8: Configure TX RF parameters
-	if  (drv_uwb_configUpdate)
-	{
-		dwt_txconfig_t l_txconfig;
-		dwt_config_t l_config;
-
-		// Apply UWB configuration
-		Drv_uwb_get_config(&l_config);
-		dwt_configure(&l_config);
-
-		Drv_uwb_get_txconfig(&l_txconfig);
-		dwt_configuretxrf(&l_txconfig);
-
-		drv_uwb_configUpdate = false;
-	}
-	
-	// Mark device as awake and ready
-	Drv_uwb_set_device_wakeup(true);
-	drv_uwb_wakeup_state_g = UWB_WAKEUP_STATE_IDLE;
-	Api_failsafe_set_uwb_fail(UWB_FAIL_NONE);
-	
-	LOG_API_UWB("Wakeup complete\r\n");
-	
-	return API_UWB_STATUS_SUCCESS;
-}
-#endif
 
 /**
  * @brief Execute one step of wake-up state machine
@@ -861,7 +725,7 @@ API_UWB_STATUS_e Drv_uwb_sleep_machine(void)
 	LOG_API_UWB("Transceiver forced off\r\n");
 	
 	// Step 2: Clear all status register flags
-	dwt_writesysstatuslo(0xFFFFFFFFu);
+	dwt_writesysstatuslo(0xFFFFFFFFu & ~SYS_STATUS_HPDWARN_BIT_MASK);
 	LOG_API_UWB("Status cleared\r\n");
 	
 	// Step 3: Save device context (currently placeholder)

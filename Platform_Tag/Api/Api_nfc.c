@@ -67,6 +67,14 @@ void Api_nfc_timer_delay(uint32_t ticks)
 	}
 }
 
+bool Api_nfc_power_on(void)
+{	
+	nrf_gpio_cfg_output(P_NFC_PW);
+
+	// Turn off all LEDs initially (active low)
+	nrf_gpio_pin_set(P_NFC_PW);
+}
+
 /**
  * @brief Test communication with NFC device at specified I2C address
  * 
@@ -331,7 +339,8 @@ nfc_result_t Api_nfc_init(void)
 {
 	NTAG_STATUS_T l_ntag_status;
 	uint8_t l_ns_reg;
-	
+
+	Api_nfc_power_on();
 	Api_nfc_twi_init();
 		
 	nfc_ntag_handle_p = NTAG_InitDevice(NTAG0, (HAL_I2C_HANDLE_T)&nfc_twi_p);

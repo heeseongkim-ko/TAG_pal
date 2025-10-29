@@ -77,6 +77,13 @@ void Aply_tag_scheduler_clear_motion_sleep_flag(void);
  */
 void Aply_tag_scheduler_reset_motion_sleep_counter(void);
 
+/**
+ * @brief Set LED counter to 1 for backchannel LED control
+ * @details Sets the LED counter to 1 to trigger immediate LED blink on next cycle
+ * @return None
+ */
+void Aply_tag_scheduler_set_led_counter_backchannel(void);
+
 #ifdef __cplusplus
 }
 #endif

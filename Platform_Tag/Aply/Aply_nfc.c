@@ -90,8 +90,8 @@ bool Aply_nfc_write_default_config(void)
 	// Sleep Mode (1 byte) - Map from mcr
 	config.sleep_mode = Aply_tag_configuration_get_field(CONFIG_FIELD_MCR);
 	
-	// Sleep Threshold (1 byte) - Set default value
-	config.sleep_threshold = 0x02; // Medium threshold
+	// Sleep Threshold (1 byte) - Get motion threshold from configuration
+	config.sleep_threshold = Aply_tag_configuration_get_field(CONFIG_FIELD_MOTION_THRESHOLD);
 	
 	// Sleep Custom Threshold (2 bytes) - Big Endian
 	config.sleep_custom_threshold[0] = Aply_tag_configuration_get_array_field(CONFIG_FIELD_MCR_THRESHOLD, 0);
@@ -109,8 +109,6 @@ bool Aply_nfc_write_default_config(void)
 	config.sleep_motion_interval[2] = Aply_tag_configuration_get_array_field(CONFIG_FIELD_MOTION_SLEEP_TIME, 1);
 	config.sleep_motion_interval[3] = Aply_tag_configuration_get_array_field(CONFIG_FIELD_MOTION_SLEEP_TIME, 0); // MSB
 	
-	// Accelerometer (1 byte) - Map from active_sensors
-	config.accelerometer = Aply_tag_configuration_get_field(CONFIG_FIELD_ACTIVE_SENSORS);
 	
 	// Accelerometer Dynamic Range (1 byte) - Map from IMU_FS_range
 	config.accel_range = Aply_tag_configuration_get_field(CONFIG_FIELD_IMU_FS_RANGE);
@@ -244,8 +242,6 @@ void Aply_nfc_parse_config_log(const nfc_eeprom_tag_config_data_t* config)
 	                               config->sleep_motion_interval[3];
 	printf_uart("Sleep Mode(Motion) Change Interval: %lu ms\r\n", sleep_motion_interval);
 	
-	// Accelerometer (1 byte)
-	printf_uart("Accelerometer: %d\r\n", config->accelerometer);
 	
 	// Accelerometer Dynamic Range (1 byte)
 	printf_uart("Accelerometer Dynamic Range: %d\r\n", config->accel_range);
